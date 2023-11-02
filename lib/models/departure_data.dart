@@ -48,12 +48,17 @@ class DepartureData {
     String result = name ?? '';
 
     // Komplett dämlich, aber die API liefert manchmal Daten ohne Bielefeld, vorran
+    /*
     if (result == "Sieker") {
       result = "Bielefeld, Sieker";
     }
 
     if (result == "Altenhagen") {
       result = "Bielefeld, Altenhagen";
+    }
+    */
+    if (result.startsWith('Bielefeld, ')) {
+      result = result.substring(11);
     }
 
     return result;

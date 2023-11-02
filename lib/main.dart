@@ -1,3 +1,5 @@
+import 'package:nextride2/providers/rocket_launch_provider.dart';
+
 import '../constants.dart' as constants;
 
 import 'package:flutter/material.dart';
@@ -18,6 +20,9 @@ void main() {
     ChangeNotifierProvider(create: (context) => TimetableProvider()),
     ChangeNotifierProvider(create: (context) => CalendarProvider()),
     ChangeNotifierProvider(create: (context) => WeatherProvider()),
+    ChangeNotifierProvider(
+        create: (context) =>
+            RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
             baseURI: constants.hassioBaseURI,
@@ -43,8 +48,12 @@ class _Nextride2AppState extends State<Nextride2App> {
     Provider.of<CalendarProvider>(context, listen: false).update();
     Provider.of<WeatherProvider>(context, listen: false).update();
 
-    Provider.of<HassioProvider>(context, listen: false).updateHassioText();
-    Provider.of<HassioProvider>(context, listen: false).updateHassioTimer();
+    if (constants.withHassio) {
+      Provider.of<HassioProvider>(context, listen: false).updateHassioText();
+      Provider.of<HassioProvider>(context, listen: false).updateHassioTimer();
+    }
+
+    Provider.of<RocketLaunchProvider>(context, listen: false).fetch();
   }
 
   @override
@@ -54,9 +63,10 @@ class _Nextride2AppState extends State<Nextride2App> {
       theme: ThemeData(
         primarySwatch: Colors.red,
         useMaterial3: false,
+        //brightness: Brightness.dark,
         textTheme: Theme.of(context).textTheme.apply(
-              fontSizeFactor: 2,
-              fontSizeDelta: 2.8,
+              fontSizeFactor: 2.3,
+              fontSizeDelta: 3,
             ),
       ),
       home: const NextrideScreen(),

@@ -25,8 +25,8 @@ class HassioProvider extends ChangeNotifier {
       required this.timerName,
       required this.textName}) {
     _updateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      updateHassioText();
-      updateHassioTimer();
+      //updateHassioText();
+      //updateHassioTimer();
     });
   }
 
@@ -68,13 +68,15 @@ class HassioProvider extends ChangeNotifier {
       "content-type": "application/json"
     };
 
-    http.Response response = await http
-        .get(Uri.parse('$baseURI/api/states/$entity'), headers: headers);
+    Uri reqUri = Uri.parse('$baseURI/api/states/$entity');
+
+    http.Response response = await http.get(reqUri, headers: headers);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load status');
+      throw Exception(
+          'Failed to load hassio data (${response.statusCode}) - ${reqUri.toString()} - ${response.body}');
     }
   }
 }

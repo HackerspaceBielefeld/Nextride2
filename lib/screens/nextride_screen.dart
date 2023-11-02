@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nextride2/models/departue_data_store.dart';
 import 'package:nextride2/models/hassio_state.dart';
+import 'package:nextride2/models/rocket_launch.dart';
 import 'package:nextride2/providers/calendar_provider.dart';
 import 'package:nextride2/providers/hassio_provider.dart';
+import 'package:nextride2/providers/rocket_launch_provider.dart';
 import 'package:nextride2/providers/weather_provider.dart';
 import 'package:weather/weather.dart';
 
@@ -93,6 +96,40 @@ class RouteGridCard extends StatelessWidget {
   }
 }
 
+class DepartureGridCard extends StatelessWidget {
+  final String lineName;
+  final DepartureDataStore departureDataStore;
+
+  const DepartureGridCard(
+      {super.key, required this.lineName, required this.departureDataStore});
+
+  @override
+  Widget build(BuildContext context) {
+    List<DepartureData> items = departureDataStore.items;
+
+    return Card(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            lineName,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length > 6 ? 6 : items.length,
+            itemBuilder: (context, index) {
+              return RideListTile(
+                item: items[index],
+              );
+            },
+          )
+        ],
+      ),
+    );
+  }
+}
+
 class SpaceGridCard extends StatelessWidget {
   const SpaceGridCard({super.key});
 
@@ -132,6 +169,15 @@ class SpaceGridCard extends StatelessWidget {
 
             return SizedBox(
               height: 80,
+              width: double.infinity,
+              child: Center(
+                  child: Text(hp.hassioText!.state,
+                      style: Theme.of(context).textTheme.headlineSmall)),
+            );
+
+            // PI3 GPU ist zu Kacke dafür
+            return SizedBox(
+              height: 80,
               child: Marquee(
                   text: hp.hassioText!.state,
                   blankSpace: 120,
@@ -158,7 +204,7 @@ class SpaceGridCard extends StatelessWidget {
                 }),
               );
               */
-              const int maxCols = 7;
+              const int maxCols = 6;
 
               return GridView.count(
                 shrinkWrap: true,
@@ -215,7 +261,7 @@ class NextrideScreen extends StatelessWidget {
                 );
               }
 
-              Set<String> routeNames = ttp.timetable!.getRouteNames();
+              //Set<String> routeNames = ttp.timetable!.getRouteNames();
 
               return Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -268,7 +314,64 @@ class NextrideScreen extends StatelessWidget {
                     GridView.count(
                       shrinkWrap: true,
                       crossAxisCount: 2,
-                      childAspectRatio: 20 / 9,
+                      childAspectRatio: 20 / 10,
+                      children: [
+                        DepartureGridCard(
+                            departureDataStore: ttp.timetable!,
+                            lineName: 'Linie 2'),
+                        Consumer<RocketLaunchProvider>(
+                          builder: (context, rlp, child) {
+                            if (rlp.rocketLaunchDataStore == null) {
+                              return const CircularProgressIndicator();
+                            }
+
+                            return Card(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Raketenstarts',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall,
+                                  ),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: rlp.rocketLaunchDataStore!.items
+                                                .length >
+                                            4
+                                        ? 4
+                                        : rlp.rocketLaunchDataStore!.items
+                                            .length,
+                                    itemBuilder: (context, index) {
+                                      RocketLaunch r = rlp
+                                          .rocketLaunchDataStore!.items[index];
+                                      return ListTile(
+                                        leading: Icon(MdiIcons.rocketLaunch),
+                                        title: Text('${r.name}'),
+                                        subtitle: Text(
+                                            '${r.providerName} - ${r.vehicleName}'),
+                                        trailing: Text(timeago.format(r.t0Dt,
+                                            locale: 'de', allowFromNow: true)),
+                                      );
+                                    },
+                                  )
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        CalendarGridCard(
+                          calItems: cp.items,
+                        ),
+                        const SpaceGridCard(),
+                      ],
+                    )
+                    /*
+                    GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      childAspectRatio: 20 / 10,
                       children: List.generate(routeNames.length, (index) {
                         return RouteGridCard(
                             departureDataStore: ttp.timetable!,
@@ -278,9 +381,10 @@ class NextrideScreen extends StatelessWidget {
                           CalendarGridCard(
                             calItems: cp.items,
                           ),
-                          SpaceGridCard(),
+                          const SpaceGridCard(),
                         ]),
                     )
+                    */
                     /*
                     ListView.builder(
                       itemCount: ttp.timetable!.items.length,
