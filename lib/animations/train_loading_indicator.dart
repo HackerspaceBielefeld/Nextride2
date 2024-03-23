@@ -12,8 +12,7 @@ class TrainLoadingIndicator extends StatefulWidget {
   _TrainLoadingIndicatorState createState() => _TrainLoadingIndicatorState();
 }
 
-class _TrainLoadingIndicatorState extends State<TrainLoadingIndicator>
-    with SingleTickerProviderStateMixin {
+class _TrainLoadingIndicatorState extends State<TrainLoadingIndicator> with SingleTickerProviderStateMixin {
   late AnimationController _rotationController;
   late Animation<double> _animation;
 
@@ -24,13 +23,12 @@ class _TrainLoadingIndicatorState extends State<TrainLoadingIndicator>
       vsync: this,
     );
 
-    _animation =
-        CurveTween(curve: Curves.easeInOutSine).animate(_rotationController)
-          ..addListener(
-            () => setState(() {}),
-          );
+    _animation = CurveTween(curve: Curves.easeInOutSine).animate(_rotationController)
+      ..addListener(
+        () => setState(() {}),
+      );
 
-    _rotationController.repeat(reverse: true);
+    //_rotationController.repeat(reverse: true);
 
     super.initState();
   }

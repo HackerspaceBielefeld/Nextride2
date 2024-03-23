@@ -10,8 +10,14 @@ class RideListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isCanceled = item.delay == -9999;
+
     return ListTile(
-      title: Text(item.route),
+      title: Text(item.route,
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(decoration: isCanceled ? TextDecoration.lineThrough : null)),
       leading: Container(
           width: 40,
           alignment: Alignment.center,
@@ -22,9 +28,7 @@ class RideListTile extends StatelessWidget {
               item.lineNumber,
               style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: constants.mobielLineColors[item.lineNumber] != null
-                      ? Colors.white
-                      : Colors.black),
+                  color: constants.mobielLineColors[item.lineNumber] != null ? Colors.white : Colors.black),
             ),
           )),
       trailing: Row(
@@ -38,12 +42,18 @@ class RideListTile extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyLarge,
                 )
               : Text(
-                  timeago.format(item.fullTimeDT,
-                      locale: 'de', allowFromNow: true),
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  timeago.format(item.fullTimeDT, locale: 'de', allowFromNow: true),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(decoration: isCanceled ? TextDecoration.lineThrough : null),
                 ),
           Text(
-            item.delay == null || item.delay == 0 ? '' : ' +${item.delay}',
+            isCanceled
+                ? '❌'
+                : item.delay == null || item.delay == 0
+                    ? ''
+                    : ' +${item.delay}',
             style: const TextStyle(color: Colors.red),
           ),
         ],

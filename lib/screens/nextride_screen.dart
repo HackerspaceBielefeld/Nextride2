@@ -8,6 +8,7 @@ import 'package:nextride2/models/hassio_state.dart';
 import 'package:nextride2/models/rocket_launch.dart';
 import 'package:nextride2/providers/calendar_provider.dart';
 import 'package:nextride2/providers/hassio_provider.dart';
+import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
 import 'package:nextride2/providers/weather_provider.dart';
 import 'package:weather/weather.dart';
@@ -23,6 +24,7 @@ import '../animations/train_loading_indicator.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../models/calendar_item.dart';
+import '../providers/clock_provider.dart';
 import '../widgets/calendar_listtile.dart';
 import '../widgets/departure_listtile.dart';
 
@@ -54,8 +56,7 @@ class CalendarGridCard extends StatelessWidget {
                 return CalendarListTile(calItems!.items[idx]);
               },
               separatorBuilder: (context, idx) => const Divider(),
-              itemCount:
-                  calItems!.items.length > 5 ? 5 : calItems!.items.length),
+              itemCount: calItems!.items.length > 5 ? 5 : calItems!.items.length),
         ],
       ),
     );
@@ -66,8 +67,7 @@ class RouteGridCard extends StatelessWidget {
   final String route;
   final DepartureDataStore departureDataStore;
 
-  const RouteGridCard(
-      {super.key, required this.route, required this.departureDataStore});
+  const RouteGridCard({super.key, required this.route, required this.departureDataStore});
 
   @override
   Widget build(BuildContext context) {
@@ -100,8 +100,7 @@ class DepartureGridCard extends StatelessWidget {
   final String lineName;
   final DepartureDataStore departureDataStore;
 
-  const DepartureGridCard(
-      {super.key, required this.lineName, required this.departureDataStore});
+  const DepartureGridCard({super.key, required this.lineName, required this.departureDataStore});
 
   @override
   Widget build(BuildContext context) {
@@ -153,35 +152,26 @@ class SpaceGridCard extends StatelessWidget {
               ),
               Text(
                 'Space.bi',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall!
-                    .copyWith(fontSize: 100),
+                style: Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 100),
               ),
             ],
           ),
           Consumer<HassioProvider>(builder: (context, hp, child) {
-            if (hp.hassioText == null ||
-                hp.hassioText!.state == '' ||
-                hp.hassioText!.state == 'undefined') {
+            if (hp.hassioText == null || hp.hassioText!.state == '' || hp.hassioText!.state == 'undefined') {
               return Container();
             }
 
             return SizedBox(
               height: 80,
               width: double.infinity,
-              child: Center(
-                  child: Text(hp.hassioText!.state,
-                      style: Theme.of(context).textTheme.headlineSmall)),
+              child: Center(child: Text(hp.hassioText!.state, style: Theme.of(context).textTheme.headlineSmall)),
             );
 
             // PI3 GPU ist zu Kacke dafür
             return SizedBox(
               height: 80,
               child: Marquee(
-                  text: hp.hassioText!.state,
-                  blankSpace: 120,
-                  style: Theme.of(context).textTheme.headlineSmall),
+                  text: hp.hassioText!.state, blankSpace: 120, style: Theme.of(context).textTheme.headlineSmall),
             );
           }),
           Consumer<WeatherProvider>(
@@ -210,9 +200,7 @@ class SpaceGridCard extends StatelessWidget {
                 shrinkWrap: true,
                 childAspectRatio: 1,
                 crossAxisCount: maxCols,
-                children: List.generate(
-                    wp.forecast.length > maxCols ? maxCols : wp.forecast.length,
-                    (index) {
+                children: List.generate(wp.forecast.length > maxCols ? maxCols : wp.forecast.length, (index) {
                   Weather w = wp.forecast[index];
 
                   return Card(
@@ -252,8 +240,48 @@ class NextrideScreen extends StatelessWidget {
       appBar: null,
       body: Stack(
         children: [
-          Consumer2<TimetableProvider, CalendarProvider>(
-            builder: (context, ttp, cp, child) {
+          Consumer3<TimetableProvider, CalendarProvider, NetworkProvider>(
+            builder: (context, ttp, cp, net, child) {
+              if (net.nic != null) {
+                return Stack(
+                  children: [
+                    Container(
+                      constraints: const BoxConstraints.expand(),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(net.nic!.uri),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    // Display seconds in bottom right corner
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Center(
+                          child: Text(
+                            net.secondsRemaining.toString(),
+                            style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                                  foreground: Paint()
+                                    ..style = PaintingStyle.stroke
+                                    ..strokeWidth = 2
+                                    ..color = Colors.black,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
               if (ttp.timetable == null) {
                 return const TrainLoadingIndicator(
                   size: 400,
@@ -274,37 +302,27 @@ class NextrideScreen extends StatelessWidget {
                           'Nextride 2',
                           style: Theme.of(context).textTheme.headlineLarge,
                         ),
-                        StatefulBuilder(
-                          builder: (context, setState) {
-                            DateTime now = DateTime.now();
-
-                            Timer.periodic(
-                              const Duration(seconds: 1),
-                              (timer) {
-                                setState(
-                                  () {
-                                    now = DateTime.now();
-                                  },
-                                );
-                              },
-                            );
-
+                        Consumer<ClockProvider>(
+                          builder: (context, clock, child) {
                             return Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(top: 46),
                                   child: Text(
-                                    '${now.day.toString()}.${now.month.toString()}.${now.year.toString()} ',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
+                                    '${clock.dateTime.day.toString()}.${clock.dateTime.month.toString()}.${clock.dateTime.year.toString()} ',
+                                    style: Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ),
-                                Text(
-                                  '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}',
-                                  style:
-                                      Theme.of(context).textTheme.headlineLarge,
-                                ),
+                                false
+                                    ? Text(
+                                        '${clock.dateTime.hour.toString().padLeft(2, '0')}:${clock.dateTime.minute.toString().padLeft(2, '0')}:${clock.dateTime.second.toString().padLeft(2, '0')}',
+                                        style: Theme.of(context).textTheme.headlineLarge,
+                                      )
+                                    : Text(
+                                        '${clock.dateTime.hour.toString().padLeft(2, '0')}:${clock.dateTime.minute.toString().padLeft(2, '0')}',
+                                        style: Theme.of(context).textTheme.headlineLarge,
+                                      )
                               ],
                             );
                           },
@@ -316,9 +334,7 @@ class NextrideScreen extends StatelessWidget {
                       crossAxisCount: 2,
                       childAspectRatio: 20 / 10,
                       children: [
-                        DepartureGridCard(
-                            departureDataStore: ttp.timetable!,
-                            lineName: 'Linie 2'),
+                        DepartureGridCard(departureDataStore: ttp.timetable!, lineName: 'Linie 2'),
                         Consumer<RocketLaunchProvider>(
                           builder: (context, rlp, child) {
                             if (rlp.rocketLaunchDataStore == null) {
@@ -331,28 +347,20 @@ class NextrideScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Raketenstarts',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall,
+                                    style: Theme.of(context).textTheme.headlineSmall,
                                   ),
                                   ListView.builder(
                                     shrinkWrap: true,
-                                    itemCount: rlp.rocketLaunchDataStore!.items
-                                                .length >
-                                            4
+                                    itemCount: rlp.rocketLaunchDataStore!.items.length > 4
                                         ? 4
-                                        : rlp.rocketLaunchDataStore!.items
-                                            .length,
+                                        : rlp.rocketLaunchDataStore!.items.length,
                                     itemBuilder: (context, index) {
-                                      RocketLaunch r = rlp
-                                          .rocketLaunchDataStore!.items[index];
+                                      RocketLaunch r = rlp.rocketLaunchDataStore!.items[index];
                                       return ListTile(
                                         leading: Icon(MdiIcons.rocketLaunch),
                                         title: Text('${r.name}'),
-                                        subtitle: Text(
-                                            '${r.providerName} - ${r.vehicleName}'),
-                                        trailing: Text(timeago.format(r.t0Dt,
-                                            locale: 'de', allowFromNow: true)),
+                                        subtitle: Text('${r.providerName} - ${r.vehicleName}'),
+                                        trailing: Text(timeago.format(r.t0Dt, locale: 'de', allowFromNow: true)),
                                       );
                                     },
                                   )
@@ -406,8 +414,7 @@ class NextrideScreen extends StatelessWidget {
                 return Container();
               }
 
-              if (hp.hassioTimer!.runState != HassioTimerStateRunState.active ||
-                  hp.hassioTimer!.finishesAt == null) {
+              if (hp.hassioTimer!.runState != HassioTimerStateRunState.active || hp.hassioTimer!.finishesAt == null) {
                 return Container();
               }
 
@@ -415,8 +422,7 @@ class NextrideScreen extends StatelessWidget {
 
               return Container(
                 constraints: const BoxConstraints.expand(),
-                decoration: BoxDecoration(
-                    border: Border.all(color: alertColor, width: 10)),
+                decoration: BoxDecoration(border: Border.all(color: alertColor, width: 10)),
                 child: SizedBox(
                   width: double.infinity,
                   child: Container(
@@ -427,17 +433,14 @@ class NextrideScreen extends StatelessWidget {
                       children: [
                         Builder(
                           builder: (context) {
-                            Duration countdown = (hp.hassioTimer!.finishesAt!
-                                .difference(DateTime.now()));
+                            Duration countdown = (hp.hassioTimer!.finishesAt!.difference(DateTime.now()));
 
                             return Text(
                               "${hp.hassioTimer!.friendlyName} ${countdown.inHours.toString().padLeft(2, '0')}:${countdown.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(countdown.inSeconds.remainder(60).toString().padLeft(2, '0'))}",
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineLarge!
-                                  .copyWith(
-                                      color: Colors.white,
-                                      backgroundColor: alertColor),
+                                  .copyWith(color: Colors.white, backgroundColor: alertColor),
                             );
                           },
                         )

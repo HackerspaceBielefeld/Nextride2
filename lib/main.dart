@@ -1,3 +1,5 @@
+import 'package:nextride2/providers/clock_provider.dart';
+import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
 
 import '../constants.dart' as constants;
@@ -20,9 +22,9 @@ void main() {
     ChangeNotifierProvider(create: (context) => TimetableProvider()),
     ChangeNotifierProvider(create: (context) => CalendarProvider()),
     ChangeNotifierProvider(create: (context) => WeatherProvider()),
-    ChangeNotifierProvider(
-        create: (context) =>
-            RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
+    ChangeNotifierProvider(create: (context) => ClockProvider()),
+    ChangeNotifierProvider(create: (context) => NetworkProvider()),
+    ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
             baseURI: constants.hassioBaseURI,
@@ -65,8 +67,9 @@ class _Nextride2AppState extends State<Nextride2App> {
         useMaterial3: false,
         //brightness: Brightness.dark,
         textTheme: Theme.of(context).textTheme.apply(
-              fontSizeFactor: 2.3,
-              fontSizeDelta: 3,
+              //fontSizeFactor: 0.9,
+              fontSizeFactor: 1.8,
+              fontSizeDelta: 2.2,
             ),
       ),
       home: const NextrideScreen(),

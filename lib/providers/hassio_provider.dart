@@ -19,11 +19,7 @@ class HassioProvider extends ChangeNotifier {
   late Timer _updateTimer;
   Timer? _displayRefreshTimer;
 
-  HassioProvider(
-      {required this.baseURI,
-      required this.authToken,
-      required this.timerName,
-      required this.textName}) {
+  HassioProvider({required this.baseURI, required this.authToken, required this.timerName, required this.textName}) {
     _updateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       //updateHassioText();
       //updateHassioTimer();
@@ -33,8 +29,7 @@ class HassioProvider extends ChangeNotifier {
   Future<void> updateHassioText() async {
     loading = true;
     Map<String, dynamic> hassioState = await getHassioState(textName);
-    hassioText =
-        HassioInputTextState.fromHassioState(HassioState.fromJson(hassioState));
+    hassioText = HassioInputTextState.fromHassioState(HassioState.fromJson(hassioState));
     loading = false;
     notifyListeners();
   }
@@ -42,12 +37,10 @@ class HassioProvider extends ChangeNotifier {
   Future<void> updateHassioTimer() async {
     loading = true;
     Map<String, dynamic> hassioState = await getHassioState(timerName);
-    hassioTimer =
-        HassioTimerState.fromHassioState(HassioState.fromJson(hassioState));
+    hassioTimer = HassioTimerState.fromHassioState(HassioState.fromJson(hassioState));
 
     if (hassioTimer!.runState == HassioTimerStateRunState.active) {
-      _displayRefreshTimer =
-          Timer.periodic(const Duration(seconds: 1), (timer) {
+      _displayRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         notifyListeners();
       });
     } else {
@@ -75,8 +68,7 @@ class HassioProvider extends ChangeNotifier {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception(
-          'Failed to load hassio data (${response.statusCode}) - ${reqUri.toString()} - ${response.body}');
+      throw Exception('Failed to load hassio data (${response.statusCode}) - ${reqUri.toString()} - ${response.body}');
     }
   }
 }

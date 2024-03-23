@@ -41,6 +41,7 @@ dependencies:
   material_design_icons_flutter:
   weather: ^3.1.1
   intl: ^0.18.1
+  udp: ^5.0.3
 
 dev_dependencies:
   flutter_test:
