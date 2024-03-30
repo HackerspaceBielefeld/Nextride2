@@ -21,8 +21,8 @@ class HassioProvider extends ChangeNotifier {
 
   HassioProvider({required this.baseURI, required this.authToken, required this.timerName, required this.textName}) {
     _updateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      //updateHassioText();
-      //updateHassioTimer();
+      updateHassioText();
+      updateHassioTimer();
     });
   }
 
