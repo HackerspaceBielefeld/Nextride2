@@ -1,0 +1,10 @@
+[Unit]
+Description=Nextride2
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/flutter-pi /opt/nextride/flutter_assets
+
+[Install]
+WantedBy=multi-user.target
