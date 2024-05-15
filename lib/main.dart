@@ -1,6 +1,7 @@
 import 'package:nextride2/providers/clock_provider.dart';
 import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
+import 'package:nextride2/widgets/htmlrichtext.dart';
 
 import '../constants.dart' as constants;
 
@@ -30,7 +31,9 @@ void main() {
             baseURI: constants.hassioBaseURI,
             authToken: constants.hassioAuthToken,
             timerName: constants.hassioTimerEntity,
-            textName: constants.hassioTextEntity)),
+            textName: constants.hassioTextEntity,
+            wcbusyName: constants.hassioWCBusy,
+            leistungName: constants.hassioLeistung)),
   ], child: const Nextride2App()));
 }
 
@@ -60,20 +63,73 @@ class _Nextride2AppState extends State<Nextride2App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Nextride 2',
-      theme: ThemeData(
-        primarySwatch: Colors.red,
-        useMaterial3: false,
-        //brightness: Brightness.dark,
-        textTheme: Theme.of(context).textTheme.apply(
-              //fontSizeFactor: 0.9,
-              fontSizeFactor: 1.8,
-              fontSizeDelta: 2.2,
-            ),
-      ),
-      home: const NextrideScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      var fontSizeFactor = 1.8;
+      var fontSizeDelta = 2.2;
+
+      if (constraints.maxHeight < 800) {
+        fontSizeFactor = 1.0;
+        fontSizeDelta = 1.2;
+      }
+
+      return MaterialApp(
+        title: 'Nextride 2',
+        themeMode: ThemeMode.light,
+        theme: ThemeData(
+          primarySwatch: Colors.red,
+          useMaterial3: false,
+          //brightness: Brightness.dark,
+
+          textTheme: Theme.of(context).textTheme.apply(
+                //fontSizeFactor: 0.9,
+                fontSizeFactor: fontSizeFactor,
+                fontSizeDelta: fontSizeDelta,
+              ),
+        ),
+        darkTheme: ThemeData.dark().copyWith(
+          primaryColor: Colors.red,
+          textTheme: Theme.of(context).textTheme.apply(
+                //fontSizeFactor: 0.9,
+                fontSizeFactor: fontSizeFactor,
+                fontSizeDelta: fontSizeDelta,
+              ),
+        ),
+        home: true
+            ? const NextrideScreen()
+            : Scaffold(
+                body: HtmlRichTextWidget(
+                  html: """
+          <body>
+          <p style="font-size: 24px; font-weight: bold; color: #ff0000;">Nextride 2</p>
+          <br />
+          <p style="font-size: 18px; font-weight: bold; color: #ff0000;">Nächste Abfahrten</p>
+          <hr />
+          <p style="font-size: 18px; font-weight: bold; color: #ff0000;">Kalender</p>
+          <br />
+          <button icon="star" style="color: orange; background-color: white">Test - MOEP</button>
+          <icon name="bus" color="#00fe00" size="90" />
+          <p style="font-size: 18px; font-weight: bold; color: blue;">Test</p>
+          <br />
+          <img src="http://bjoernweis.de/icons/ubuntu-logo.png" width="100" height="100" />
+          <br />
+          <center><p style="font-size: 18px; font-weight: bold; color: #ff0000;">Uhrzeit</p></center>
+          <p style="font-size: 12px; color: #aadd44;">Wetter</p>
+          <center>
+          <button type="outlined" icon="star" style="color: orange; background-color: white">Test - MOEP</button>
+          <vr />
+          <button type="text" icon="star" style="color: orange; background-color: white">Test - MOEP</button>
+          </center>
+          <center>
+          <button icon="star" style="color: orange; background-color: white">Test - MOEP</button>
+          </center>
+          <br />
+          <p style="color: black; font-size:18px">Tescht</p> <a style="font-size:18px" href="https://www.google.de">Google</a> <p>Link</p>
+          </body>
+        """,
+                ),
+              ),
+        debugShowCheckedModeBanner: false,
+      );
+    });
   }
 }

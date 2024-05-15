@@ -11,6 +11,8 @@ import 'package:nextride2/providers/hassio_provider.dart';
 import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
 import 'package:nextride2/providers/weather_provider.dart';
+import 'package:nextride2/widgets/wattage.dart';
+import 'package:nextride2/widgets/wc_busy.dart';
 import 'package:weather/weather.dart';
 
 import '../constants.dart' as constants;
@@ -298,9 +300,38 @@ class NextrideScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Nextride 2',
-                          style: Theme.of(context).textTheme.headlineLarge,
+                        Row(
+                          children: [
+                            Text(
+                              'NxR 2',
+                              style: Theme.of(context).textTheme.headlineLarge,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 50.0),
+                              child: Consumer<HassioProvider>(
+                                builder: (context, hp, child) {
+                                  if (hp.hassioWCBusy == null) {
+                                    return const WCBusyWidget(state: WCState.unknown, size: 60);
+                                  }
+
+                                  return WCBusyWidget(
+                                      state: hp.hassioWCBusy!.isOn ? WCState.occupied : WCState.free, size: 60);
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 20),
+                              child: Consumer<HassioProvider>(
+                                builder: (context, value, child) {
+                                  if (value.hassioLeistung == null) {
+                                    return const CircularProgressIndicator();
+                                  }
+
+                                  return WattageWidget(wattage: double.parse(value.hassioLeistung!.state), size: 60);
+                                },
+                              ),
+                            )
+                          ],
                         ),
                         Consumer<ClockProvider>(
                           builder: (context, clock, child) {

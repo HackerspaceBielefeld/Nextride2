@@ -4,12 +4,7 @@ String buildInfo = "Nextride v2.0.0";
 
 String endpoint = "https://haltestellenmonitor.vrr.de";
 
-Map<String, Color> mobielLineColors = {
-  '1': Colors.blue,
-  '2': Colors.lightGreen,
-  '3': Colors.yellow,
-  '4': Colors.red
-};
+Map<String, Color> mobielLineColors = {'1': Colors.blue, '2': Colors.lightGreen, '3': Colors.yellow, '4': Colors.red};
 
 Map<int, String> requestStations = {
   //23005500: 'Bielefeld HBF',
@@ -24,3 +19,7 @@ String hassioBaseURI = 'http://1.2.3.4:8123/';
 String hassioAuthToken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 String hassioTimerEntity = 'timer.bestelltimer';
 String hassioTextEntity = 'input_text.displaytext';
+String hassioWCBusy = 'input_boolean.wc_busy';
+String hassioLeistung = 'sensor.leistung_total';
+
+String rocketLaunchEndpoint = 'https://fdo.rocketlaunch.live/json/launches/next/5';

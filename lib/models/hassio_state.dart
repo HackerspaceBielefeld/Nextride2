@@ -19,12 +19,8 @@ class HassioState {
       entityId: json['entity_id'],
       state: json['state'],
       attributes: json['attributes'],
-      lastChanged: json['last_changed'] == null
-          ? null
-          : DateTime.parse(json['last_changed']),
-      lastUpdated: json['last_updated'] == null
-          ? null
-          : DateTime.parse(json['last_updated']),
+      lastChanged: json['last_changed'] == null ? null : DateTime.parse(json['last_changed']),
+      lastUpdated: json['last_updated'] == null ? null : DateTime.parse(json['last_updated']),
       contextId: json['context']['id'],
     );
   }
@@ -34,8 +30,7 @@ Duration parseDuration(String input) {
   List<String> parts = input.split(':');
 
   if (parts.length != 3) {
-    throw const FormatException(
-        'Ungültiges Eingabeformat. Erwartet wird STUNDE:MINUTEN:SEKUNDEN');
+    throw const FormatException('Ungültiges Eingabeformat. Erwartet wird STUNDE:MINUTEN:SEKUNDEN');
   }
 
   try {
@@ -88,8 +83,7 @@ class HassioTimerState extends HassioState {
   final String? icon;
   final String friendlyName;
 
-  HassioTimerStateRunState get runState =>
-      HassioTimerStateRunState.fromString(state);
+  HassioTimerStateRunState get runState => HassioTimerStateRunState.fromString(state);
 
   HassioTimerState(
       {required this.duration,
@@ -114,9 +108,7 @@ class HassioTimerState extends HassioState {
       contextId: hs.contextId,
       duration: parseDuration(hs.attributes['duration']),
       editable: hs.attributes['editable'],
-      finishesAt: hs.attributes['finishes_at'] == null
-          ? null
-          : DateTime.parse(hs.attributes['finishes_at']),
+      finishesAt: hs.attributes['finishes_at'] == null ? null : DateTime.parse(hs.attributes['finishes_at']),
       icon: hs.attributes['icon'],
       friendlyName: hs.attributes['friendly_name'] ?? '',
     );
@@ -149,6 +141,70 @@ class HassioInputTextState extends HassioState {
       contextId: hs.contextId,
       editable: hs.attributes['editable'],
       icon: hs.attributes['icon'],
+      friendlyName: hs.attributes['friendly_name'] ?? '',
+    );
+  }
+}
+
+class HassioInputBooleanState extends HassioState {
+  final bool editable;
+  final String? icon;
+  final String friendlyName;
+
+  bool get isOn => state == 'on';
+
+  HassioInputBooleanState(
+      {required this.editable,
+      required this.icon,
+      required this.friendlyName,
+      required super.entityId,
+      required super.state,
+      required super.attributes,
+      required super.lastChanged,
+      required super.lastUpdated,
+      required super.contextId});
+
+  factory HassioInputBooleanState.fromHassioState(HassioState hs) {
+    return HassioInputBooleanState(
+      entityId: hs.entityId,
+      state: hs.state,
+      attributes: hs.attributes,
+      lastChanged: hs.lastChanged,
+      lastUpdated: hs.lastUpdated,
+      contextId: hs.contextId,
+      editable: hs.attributes['editable'],
+      icon: hs.attributes['icon'],
+      friendlyName: hs.attributes['friendly_name'] ?? '',
+    );
+  }
+}
+
+class HassioInputPowerState extends HassioState {
+  final String unitOfMeasurement;
+  final String deviceClass;
+  final String friendlyName;
+
+  HassioInputPowerState(
+      {required this.unitOfMeasurement,
+      required this.deviceClass,
+      required this.friendlyName,
+      required super.entityId,
+      required super.state,
+      required super.attributes,
+      required super.lastChanged,
+      required super.lastUpdated,
+      required super.contextId});
+
+  factory HassioInputPowerState.fromHassioState(HassioState hs) {
+    return HassioInputPowerState(
+      entityId: hs.entityId,
+      state: hs.state,
+      attributes: hs.attributes,
+      lastChanged: hs.lastChanged,
+      lastUpdated: hs.lastUpdated,
+      contextId: hs.contextId,
+      unitOfMeasurement: hs.attributes['unit_of_measurement'],
+      deviceClass: hs.attributes['device_class'],
       friendlyName: hs.attributes['friendly_name'] ?? '',
     );
   }

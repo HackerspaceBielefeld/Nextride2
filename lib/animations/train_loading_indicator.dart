@@ -28,7 +28,7 @@ class _TrainLoadingIndicatorState extends State<TrainLoadingIndicator> with Sing
         () => setState(() {}),
       );
 
-    //_rotationController.repeat(reverse: true);
+    _rotationController.repeat(reverse: true);
 
     super.initState();
   }
