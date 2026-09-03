@@ -18,10 +18,16 @@ class DepartureDataStore {
   void add(DepartureData entry) {
     int oldIdx = _items.indexWhere((element) => element.key == entry.key);
     if (oldIdx >= 0) {
-      _items.removeAt(oldIdx);
+      // An Ort und Stelle ersetzen, danach neu einsortieren. Frueher wurde der
+      // alte Eintrag geloescht und der neue angehaengt - dadurch ist jede
+      // aktualisierte Abfahrt ans Listenende gerutscht und die Anzeige der
+      // naechsten N Abfahrten zeigte die falschen Fahrten.
+      _items[oldIdx] = entry;
+    } else {
+      _items.add(entry);
     }
 
-    _items.add(entry);
+    _items.sort((a, b) => a.fullTime.compareTo(b.fullTime));
   }
 
   void addFromJson(List<dynamic> json) {
@@ -30,11 +36,12 @@ class DepartureDataStore {
     }
   }
 
+  /// Entfernt alle bereits abgefahrenen Verbindungen.
   void cleanup() {
-    int now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
-    _items.where((element) => element.fullTime < now).forEach((element) {
-      _items.remove(element);
-    });
+    int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    // removeWhere statt where().forEach(remove) - letzteres modifiziert die
+    // Liste waehrend ueber ihre Lazy-View iteriert wird (ConcurrentModificationError).
+    _items.removeWhere((element) => element.fullTime < now);
   }
 
   Set<String> getRouteNames() {

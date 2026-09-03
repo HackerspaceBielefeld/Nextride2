@@ -1,7 +1,6 @@
 import 'package:nextride2/providers/clock_provider.dart';
 import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
-import 'package:nextride2/widgets/htmlrichtext.dart';
 
 import '../constants.dart' as constants;
 
@@ -33,7 +32,8 @@ void main() {
             timerName: constants.hassioTimerEntity,
             textName: constants.hassioTextEntity,
             wcbusyName: constants.hassioWCBusy,
-            leistungName: constants.hassioLeistung)),
+            leistungName: constants.hassioLeistung,
+            enabled: constants.withHassio)),
   ], child: const Nextride2App()));
 }
 
@@ -53,10 +53,8 @@ class _Nextride2AppState extends State<Nextride2App> {
     Provider.of<CalendarProvider>(context, listen: false).update();
     Provider.of<WeatherProvider>(context, listen: false).update();
 
-    if (constants.withHassio) {
-      Provider.of<HassioProvider>(context, listen: false).updateHassioText();
-      Provider.of<HassioProvider>(context, listen: false).updateHassioTimer();
-    }
+    // updateAll() prueft selbst, ob die Hassio-Anbindung aktiv ist.
+    Provider.of<HassioProvider>(context, listen: false).updateAll();
 
     Provider.of<RocketLaunchProvider>(context, listen: false).fetch();
   }
@@ -72,62 +70,29 @@ class _Nextride2AppState extends State<Nextride2App> {
         fontSizeDelta = 1.2;
       }
 
+      final baseTextTheme = Theme.of(context).textTheme;
+
       return MaterialApp(
         title: 'Nextride 2',
         themeMode: ThemeMode.light,
         theme: ThemeData(
           primarySwatch: Colors.red,
           useMaterial3: false,
-          //brightness: Brightness.dark,
-
-          textTheme: Theme.of(context).textTheme.apply(
-                //fontSizeFactor: 0.9,
-                fontSizeFactor: fontSizeFactor,
-                fontSizeDelta: fontSizeDelta,
-              ),
+          textTheme: baseTextTheme.apply(
+            fontSizeFactor: fontSizeFactor,
+            fontSizeDelta: fontSizeDelta,
+          ),
         ),
         darkTheme: ThemeData.dark().copyWith(
           primaryColor: Colors.red,
-          textTheme: Theme.of(context).textTheme.apply(
-                //fontSizeFactor: 0.9,
+          // Auf dem Text-Theme des Dark-Themes aufsetzen, sonst waeren die
+          // Textfarben die des hellen Fallback-Themes (unlesbar auf dunkel).
+          textTheme: ThemeData.dark().textTheme.apply(
                 fontSizeFactor: fontSizeFactor,
                 fontSizeDelta: fontSizeDelta,
               ),
         ),
-        home: true
-            ? const NextrideScreen()
-            : Scaffold(
-                body: HtmlRichTextWidget(
-                  html: """
-          <body>
-          <p style="font-size: 24px; font-weight: bold; color: #ff0000;">Nextride 2</p>
-          <br />
-          <p style="font-size: 18px; font-weight: bold; color: #ff0000;">Nächste Abfahrten</p>
-          <hr />
-          <p style="font-size: 18px; font-weight: bold; color: #ff0000;">Kalender</p>
-          <br />
-          <button icon="star" style="color: orange; background-color: white">Test - MOEP</button>
-          <icon name="bus" color="#00fe00" size="90" />
-          <p style="font-size: 18px; font-weight: bold; color: blue;">Test</p>
-          <br />
-          <img src="http://bjoernweis.de/icons/ubuntu-logo.png" width="100" height="100" />
-          <br />
-          <center><p style="font-size: 18px; font-weight: bold; color: #ff0000;">Uhrzeit</p></center>
-          <p style="font-size: 12px; color: #aadd44;">Wetter</p>
-          <center>
-          <button type="outlined" icon="star" style="color: orange; background-color: white">Test - MOEP</button>
-          <vr />
-          <button type="text" icon="star" style="color: orange; background-color: white">Test - MOEP</button>
-          </center>
-          <center>
-          <button icon="star" style="color: orange; background-color: white">Test - MOEP</button>
-          </center>
-          <br />
-          <p style="color: black; font-size:18px">Tescht</p> <a style="font-size:18px" href="https://www.google.de">Google</a> <p>Link</p>
-          </body>
-        """,
-                ),
-              ),
+        home: const NextrideScreen(),
         debugShowCheckedModeBanner: false,
       );
     });

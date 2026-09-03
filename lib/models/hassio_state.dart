@@ -14,15 +14,24 @@ class HassioState {
       required this.lastUpdated,
       required this.contextId});
 
+  /// Home Assistant liefert bei fehlenden/kaputten Entities auch mal ein
+  /// unvollstaendiges Objekt - deshalb ueberall Defaults statt harter Casts.
   factory HassioState.fromJson(Map<String, dynamic> json) {
     return HassioState(
-      entityId: json['entity_id'],
-      state: json['state'],
-      attributes: json['attributes'],
-      lastChanged: json['last_changed'] == null ? null : DateTime.parse(json['last_changed']),
-      lastUpdated: json['last_updated'] == null ? null : DateTime.parse(json['last_updated']),
-      contextId: json['context']['id'],
+      entityId: json['entity_id'] as String? ?? '',
+      state: json['state'] as String? ?? 'unknown',
+      attributes: (json['attributes'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{},
+      lastChanged: _parseDateTime(json['last_changed']),
+      lastUpdated: _parseDateTime(json['last_updated']),
+      contextId: (json['context'] as Map?)?['id'] as String? ?? '',
     );
+  }
+
+  static DateTime? _parseDateTime(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    return DateTime.tryParse(value);
   }
 }
 
@@ -58,7 +67,9 @@ enum HassioTimerStateRunState {
       case 'paused':
         return HassioTimerStateRunState.paused;
       default:
-        throw Exception('Unknown timer run state "$s"');
+        // 'unavailable'/'unknown' liefert HA bei Neustarts. Kein Grund, im
+        // build() eine Exception zu werfen - der Timer gilt dann als aus.
+        return HassioTimerStateRunState.idle;
     }
   }
 
@@ -106,11 +117,11 @@ class HassioTimerState extends HassioState {
       lastChanged: hs.lastChanged,
       lastUpdated: hs.lastUpdated,
       contextId: hs.contextId,
-      duration: parseDuration(hs.attributes['duration']),
-      editable: hs.attributes['editable'],
-      finishesAt: hs.attributes['finishes_at'] == null ? null : DateTime.parse(hs.attributes['finishes_at']),
-      icon: hs.attributes['icon'],
-      friendlyName: hs.attributes['friendly_name'] ?? '',
+      duration: parseDuration(hs.attributes['duration'] as String? ?? '00:00:00'),
+      editable: hs.attributes['editable'] as bool? ?? false,
+      finishesAt: HassioState._parseDateTime(hs.attributes['finishes_at']),
+      icon: hs.attributes['icon'] as String?,
+      friendlyName: hs.attributes['friendly_name'] as String? ?? '',
     );
   }
 }
@@ -139,9 +150,9 @@ class HassioInputTextState extends HassioState {
       lastChanged: hs.lastChanged,
       lastUpdated: hs.lastUpdated,
       contextId: hs.contextId,
-      editable: hs.attributes['editable'],
-      icon: hs.attributes['icon'],
-      friendlyName: hs.attributes['friendly_name'] ?? '',
+      editable: hs.attributes['editable'] as bool? ?? false,
+      icon: hs.attributes['icon'] as String?,
+      friendlyName: hs.attributes['friendly_name'] as String? ?? '',
     );
   }
 }
@@ -172,9 +183,9 @@ class HassioInputBooleanState extends HassioState {
       lastChanged: hs.lastChanged,
       lastUpdated: hs.lastUpdated,
       contextId: hs.contextId,
-      editable: hs.attributes['editable'],
-      icon: hs.attributes['icon'],
-      friendlyName: hs.attributes['friendly_name'] ?? '',
+      editable: hs.attributes['editable'] as bool? ?? false,
+      icon: hs.attributes['icon'] as String?,
+      friendlyName: hs.attributes['friendly_name'] as String? ?? '',
     );
   }
 }
@@ -203,9 +214,9 @@ class HassioInputPowerState extends HassioState {
       lastChanged: hs.lastChanged,
       lastUpdated: hs.lastUpdated,
       contextId: hs.contextId,
-      unitOfMeasurement: hs.attributes['unit_of_measurement'],
-      deviceClass: hs.attributes['device_class'],
-      friendlyName: hs.attributes['friendly_name'] ?? '',
+      unitOfMeasurement: hs.attributes['unit_of_measurement'] as String? ?? '',
+      deviceClass: hs.attributes['device_class'] as String? ?? '',
+      friendlyName: hs.attributes['friendly_name'] as String? ?? '',
     );
   }
 }

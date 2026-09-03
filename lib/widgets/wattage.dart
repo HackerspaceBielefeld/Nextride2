@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
 class WattageWidget extends StatelessWidget {
   final double wattage;
   final double size;
 
-  const WattageWidget({Key? key, required this.wattage, required this.size}) : super(key: key);
+  const WattageWidget({super.key, required this.wattage, required this.size});
 
   @override
   Widget build(BuildContext context) {

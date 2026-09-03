@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class LinePainter extends CustomPainter {
   final Color color;
@@ -25,7 +24,7 @@ class WCBusyWidget extends StatelessWidget {
   final WCState state;
   final double size;
 
-  const WCBusyWidget({Key? key, required this.state, this.size = 20.0}) : super(key: key);
+  const WCBusyWidget({super.key, required this.state, this.size = 20.0});
 
   @override
   Widget build(BuildContext context) {
@@ -58,23 +57,6 @@ class WCBusyWidget extends StatelessWidget {
                 : CustomPaint(painter: LinePainter(color: _getColor(), strokeWidth: 4.0))),
       ],
     );
-
-    switch (state) {
-      case WCState.free:
-        return Text('WC', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: size));
-      case WCState.occupied:
-        return Stack(
-          children: [
-            Text('WC', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: size)),
-            Positioned.fill(
-              child: Icon(Icons.close, color: Colors.red, size: size * 1.3),
-            ),
-          ],
-        );
-      case WCState.unknown:
-      default:
-        return Text('WC', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: size));
-    }
   }
 
   Color _getColor() {
@@ -84,7 +66,6 @@ class WCBusyWidget extends StatelessWidget {
       case WCState.occupied:
         return Colors.red;
       case WCState.unknown:
-      default:
         return Colors.grey;
     }
   }

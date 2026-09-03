@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:intl/intl.dart';
-import 'package:marquee/marquee.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:nextride2/models/departue_data_store.dart';
 import 'package:nextride2/models/hassio_state.dart';
 import 'package:nextride2/models/rocket_launch.dart';
@@ -14,8 +11,6 @@ import 'package:nextride2/providers/weather_provider.dart';
 import 'package:nextride2/widgets/wattage.dart';
 import 'package:nextride2/widgets/wc_busy.dart';
 import 'package:weather/weather.dart';
-
-import '../constants.dart' as constants;
 
 import 'package:flutter/material.dart';
 import 'package:nextride2/models/departure_data.dart';
@@ -163,17 +158,11 @@ class SpaceGridCard extends StatelessWidget {
               return Container();
             }
 
+            // Kein Marquee: die GPU des PI3 kommt mit der Daueranimation nicht klar.
             return SizedBox(
               height: 80,
               width: double.infinity,
               child: Center(child: Text(hp.hassioText!.state, style: Theme.of(context).textTheme.headlineSmall)),
-            );
-
-            // PI3 GPU ist zu Kacke dafür
-            return SizedBox(
-              height: 80,
-              child: Marquee(
-                  text: hp.hassioText!.state, blankSpace: 120, style: Theme.of(context).textTheme.headlineSmall),
             );
           }),
           Consumer<WeatherProvider>(
@@ -205,20 +194,24 @@ class SpaceGridCard extends StatelessWidget {
                 children: List.generate(wp.forecast.length > maxCols ? maxCols : wp.forecast.length, (index) {
                   Weather w = wp.forecast[index];
 
+                  final double? tempMin = w.tempMin?.celsius;
+                  final double? tempMax = w.tempMax?.celsius;
+
                   return Card(
                       child: Column(
                     children: [
                       Text(
-                        DateFormat('HH:mm').format(w.date!),
+                        w.date == null ? '--:--' : DateFormat('HH:mm').format(w.date!),
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                       Icon(
                         WeatherProvider.getWeatherIcon(w.weatherIcon ?? ''),
                         size: 40,
                       ),
-                      //Text(w.weatherMain ?? ''),
                       Text(
-                        '${w.tempMin?.celsius!.round()} - ${w.tempMax?.celsius!.round()}°C',
+                        tempMin == null || tempMax == null
+                            ? '--'
+                            : '${tempMin.round()} - ${tempMax.round()}°C',
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                     ],
@@ -264,7 +257,7 @@ class NextrideScreen extends StatelessWidget {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Center(
@@ -323,11 +316,18 @@ class NextrideScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 20),
                               child: Consumer<HassioProvider>(
                                 builder: (context, value, child) {
-                                  if (value.hassioLeistung == null) {
-                                    return const CircularProgressIndicator();
+                                  // HA liefert bei Sensorausfall 'unavailable'/
+                                  // 'unknown' - double.parse haette hier im
+                                  // build() eine FormatException geworfen.
+                                  final double? watt = value.hassioLeistung == null
+                                      ? null
+                                      : double.tryParse(value.hassioLeistung!.state);
+
+                                  if (watt == null) {
+                                    return const SizedBox(width: 60, height: 60);
                                   }
 
-                                  return WattageWidget(wattage: double.parse(value.hassioLeistung!.state), size: 60);
+                                  return WattageWidget(wattage: watt, size: 60);
                                 },
                               ),
                             )
@@ -345,15 +345,10 @@ class NextrideScreen extends StatelessWidget {
                                     style: Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ),
-                                false
-                                    ? Text(
-                                        '${clock.dateTime.hour.toString().padLeft(2, '0')}:${clock.dateTime.minute.toString().padLeft(2, '0')}:${clock.dateTime.second.toString().padLeft(2, '0')}',
-                                        style: Theme.of(context).textTheme.headlineLarge,
-                                      )
-                                    : Text(
-                                        '${clock.dateTime.hour.toString().padLeft(2, '0')}:${clock.dateTime.minute.toString().padLeft(2, '0')}',
-                                        style: Theme.of(context).textTheme.headlineLarge,
-                                      )
+                                Text(
+                                  '${clock.dateTime.hour.toString().padLeft(2, '0')}:${clock.dateTime.minute.toString().padLeft(2, '0')}',
+                                  style: Theme.of(context).textTheme.headlineLarge,
+                                )
                               ],
                             );
                           },
@@ -388,8 +383,8 @@ class NextrideScreen extends StatelessWidget {
                                     itemBuilder: (context, index) {
                                       RocketLaunch r = rlp.rocketLaunchDataStore!.items[index];
                                       return ListTile(
-                                        leading: Icon(MdiIcons.rocketLaunch),
-                                        title: Text('${r.name}'),
+                                        leading: const Icon(MdiIcons.rocketLaunch),
+                                        title: Text(r.name),
                                         subtitle: Text('${r.providerName} - ${r.vehicleName}'),
                                         trailing: Text(timeago.format(r.t0Dt, locale: 'de', allowFromNow: true)),
                                       );
@@ -456,27 +451,30 @@ class NextrideScreen extends StatelessWidget {
                 decoration: BoxDecoration(border: Border.all(color: alertColor, width: 10)),
                 child: SizedBox(
                   width: double.infinity,
-                  child: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            Duration countdown = (hp.hassioTimer!.finishesAt!.difference(DateTime.now()));
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          Duration countdown = hp.hassioTimer!.finishesAt!.difference(DateTime.now());
+                          // Abgelaufener Timer, dessen Zustand noch nicht neu
+                          // geholt wurde - sonst laeuft die Anzeige ins Negative.
+                          if (countdown.isNegative) {
+                            countdown = Duration.zero;
+                          }
 
-                            return Text(
+                          return Text(
                               "${hp.hassioTimer!.friendlyName} ${countdown.inHours.toString().padLeft(2, '0')}:${countdown.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(countdown.inSeconds.remainder(60).toString().padLeft(2, '0'))}",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge!
-                                  .copyWith(color: Colors.white, backgroundColor: alertColor),
-                            );
-                          },
-                        )
-                      ],
-                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineLarge!
+                                .copyWith(color: Colors.white, backgroundColor: alertColor),
+                          );
+                        },
+                      )
+                    ],
                   ),
                 ),
               );

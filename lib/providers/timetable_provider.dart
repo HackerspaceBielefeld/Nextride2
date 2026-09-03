@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nextride2/service/api_client.dart';
 
 import '../constants.dart' as constants;
@@ -10,8 +10,8 @@ import '../models/departue_data_store.dart';
 class TimetableProvider extends ChangeNotifier {
   DepartureDataStore? timetable;
 
-  late Timer _updateTimer;
-  late Timer _maintainanceTimer;
+  late final Timer _updateTimer;
+  late final Timer _maintainanceTimer;
 
   TimetableProvider() {
     _updateTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
@@ -56,9 +56,7 @@ class TimetableProvider extends ChangeNotifier {
   }
 
   void cleanup() {
-    if (timetable != null) {
-      timetable!.cleanup();
-    }
+    timetable?.cleanup();
   }
 
   void maintainance() {
@@ -66,41 +64,45 @@ class TimetableProvider extends ChangeNotifier {
       return;
     }
 
-    DateTime now = DateTime.now();
+    timetable!.cleanup();
 
-    for (int i = timetable!.items.length - 1; i >= 0; i--) {
-      if (now.isAfter(timetable!.items[i].fullTimeDT)) {
-        timetable!.items.removeAt(i);
-      }
-    }
-
+    // Bewusst immer benachrichtigen: die relativen Zeiten ("in 3 Minuten")
+    // muessen auch ohne Datenaenderung regelmaessig neu gerendert werden.
     notifyListeners();
   }
 
   Future<void> fetch() async {
-    /*
-    constants.requestStations.forEach((key, value) {
-      await fetchStation(key, value);
-    });
-    */
-    await Future.wait(List.generate(constants.requestStations.length, (index) {
-      return fetchStation(constants.requestStations.keys.elementAt(index),
-          constants.requestStations.values.elementAt(index));
-    }));
+    try {
+      await Future.wait(List.generate(constants.requestStations.length, (index) {
+        return fetchStation(
+            constants.requestStations.keys.elementAt(index), constants.requestStations.values.elementAt(index));
+      }));
+    } catch (e) {
+      // Timer-Callback: eine Exception waere hier unbehandelt. Vorhandene
+      // Abfahrten bleiben stehen, beim naechsten Durchlauf wird neu versucht.
+      debugPrint('Timetable fetch failed: $e');
+    }
 
     notifyListeners();
   }
 
   Future<void> fetchStation(int id, String name) async {
-    APIClientResponse response = await APIClient.post(
-        'backend/api/stations/table', _requestBody(id, name));
+    APIClientResponse response = await APIClient.post('backend/api/stations/table', _requestBody(id, name));
+
+    final decoded = jsonDecode(response.item1.body);
+    final List<dynamic> departureData = (decoded['departureData'] as List<dynamic>?) ?? const [];
 
     if (timetable == null) {
-      timetable = DepartureDataStore.fromJson(
-          jsonDecode(response.item1.body)['departureData']);
+      timetable = DepartureDataStore.fromJson(departureData);
     } else {
-      timetable!.addFromJson(jsonDecode(response.item1.body)['departureData']);
+      timetable!.addFromJson(departureData);
     }
-    //notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _updateTimer.cancel();
+    _maintainanceTimer.cancel();
+    super.dispose();
   }
 }

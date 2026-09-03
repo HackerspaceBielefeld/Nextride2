@@ -1,9 +1,27 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
-Color hexToColor(String code) {
-  return new Color(int.parse(code));
+/// Akzeptiert '0xAARRGGBB', '#RRGGBB' und 'RRGGBB'. Bei einem unbekannten
+/// Format wird nicht geworfen (das lief frueher bis ins build() durch), sondern
+/// [fallback] geliefert.
+Color hexToColor(String? code, {Color fallback = const Color(0xff000000)}) {
+  if (code == null || code.isEmpty) {
+    return fallback;
+  }
+
+  String value = code.trim();
+  if (value.startsWith('#')) {
+    value = value.substring(1);
+  }
+  if (value.length == 6) {
+    value = 'ff$value';
+  }
+  if (!value.startsWith('0x') && !value.startsWith('0X')) {
+    value = '0x$value';
+  }
+
+  final int? parsed = int.tryParse(value);
+  return parsed == null ? fallback : Color(parsed);
 }
 
 // 0 ist kein Wochentag
@@ -17,7 +35,7 @@ const List<String> weekdaynames = [
   "Sa",
   "So"
 ];
-final Map<String, IconData> iconLib = {
+const Map<String, IconData> iconLib = {
   'account-group': MdiIcons.accountGroup,
   'ballot-outline': MdiIcons.ballotOutline,
   'cake': MdiIcons.cake,
@@ -44,8 +62,8 @@ class CalendarItemVisualMarker {
 
   factory CalendarItemVisualMarker.fromJson(Map<String, dynamic> json) {
     return CalendarItemVisualMarker(
-        itemicon: summaryIcon(json['name']),
-        itemcolor: hexToColor(json['color'] as String));
+        itemicon: summaryIcon(json['name'] as String?),
+        itemcolor: hexToColor(json['color'] as String?));
   }
 }
 
@@ -58,12 +76,14 @@ class CalendarItem {
   final CalendarItemVisualMarker icon;
   final bool cancelled;
 
-  String get weekday =>
-      weekdaynames[DateTime.fromMillisecondsSinceEpoch(tsstart * 1000).weekday];
-  int get day => DateTime.fromMillisecondsSinceEpoch(tsstart * 1000).day;
-  int get month => DateTime.fromMillisecondsSinceEpoch(tsstart * 1000).month;
-  int get hour => DateTime.fromMillisecondsSinceEpoch(tsstart * 1000).hour;
-  int get minute => DateTime.fromMillisecondsSinceEpoch(tsstart * 1000).minute;
+  DateTime get start => DateTime.fromMillisecondsSinceEpoch(tsstart * 1000);
+  DateTime get end => DateTime.fromMillisecondsSinceEpoch(tsend * 1000);
+
+  String get weekday => weekdaynames[start.weekday];
+  int get day => start.day;
+  int get month => start.month;
+  int get hour => start.hour;
+  int get minute => start.minute;
 
   CalendarItem(
       {required this.summary,
@@ -78,15 +98,14 @@ class CalendarItem {
     const defaultIcon = {'name': 'none', 'color': '0xff000000'};
 
     return CalendarItem(
-        summary: json['summary'] as String,
-        tsstart: json['tsstart'] as int,
-        tsend: json['tsend'] as int,
-        categories: json['categories'] as List<dynamic>,
-        color: hexToColor(json['color'] as String),
-        icon: CalendarItemVisualMarker.fromJson(json.containsKey('icon')
-            ? json['icon'] ?? defaultIcon
-            : defaultIcon),
-        cancelled: json.containsKey('cancelled') ? true : false);
+        summary: json['summary'] as String? ?? '',
+        tsstart: json['tsstart'] as int? ?? 0,
+        tsend: json['tsend'] as int? ?? 0,
+        categories: (json['categories'] as List<dynamic>?) ?? const [],
+        color: hexToColor(json['color'] as String?),
+        icon: CalendarItemVisualMarker.fromJson(
+            (json['icon'] as Map<String, dynamic>?) ?? defaultIcon),
+        cancelled: json['cancelled'] == true);
   }
 }
 

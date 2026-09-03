@@ -15,7 +15,11 @@ Map<int, String> requestStations = {
 String openWeatherAPIKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 String weatherCityName = 'Bielefeld';
 
-String hassioBaseURI = 'http://1.2.3.4:8123/';
+// Home-Assistant-Anbindung komplett deaktivieren (wird in main.dart geprueft).
+bool withHassio = true;
+
+// Ohne abschliessenden Slash - die Pfade werden mit '/api/...' angehaengt.
+String hassioBaseURI = 'http://1.2.3.4:8123';
 String hassioAuthToken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 String hassioTimerEntity = 'timer.bestelltimer';
 String hassioTextEntity = 'input_text.displaytext';
