@@ -13,13 +13,29 @@ Voraussetzung ist ein Dart-SDK >= 3.5 (Flutter >= 3.24).
 
 ```bash
 cp lib/constants.example.dart lib/constants.dart
-$EDITOR lib/constants.dart   # API-Keys, Haltestellen-IDs, Hassio-Token eintragen
+$EDITOR lib/constants.dart   # API-Keys, Haltestellen-IDs eintragen
 flutter pub get
 flutter analyze
 ```
 
-`withHassio = false` schaltet die komplette Home-Assistant-Anbindung ab
-(kein UDP-Socket, keine Update-Timer).
+Home-Assistant-Endpunkt, Token und Entity-Namen werden zur Laufzeit aus der
+Umgebung gelesen:
+
+```bash
+export HASSIO_BASE_URI=http://1.2.3.4:8123
+export HASSIO_TOKEN=xxxxxxxxxxxxxxxx
+export HASSIO_TIMER_ENTITY=timer.bestelltimer
+export HASSIO_TEXT_ENTITY=input_text.displaytext
+export HASSIO_WCBUSY_ENTITY=input_boolean.wc_busy
+export HASSIO_LEISTUNG_ENTITY=sensor.leistung_total
+```
+
+Nicht gesetzte Entities werden uebersprungen (keine Anfrage, keine Anzeige).
+Auf dem Pi gehoeren die Zeilen (ohne `export`) nach `/etc/nextride2.env`
+(`chmod 600`); `nextride2.service` und `nextride2.sh` laden die Datei.
+
+`withHassio = false` oder eine fehlende Variable schaltet die komplette
+Home-Assistant-Anbindung ab (kein UDP-Socket, keine Update-Timer).
 
 ## Build & Deploy
 

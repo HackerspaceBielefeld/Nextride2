@@ -15,6 +15,14 @@ ASSET_PATH="/opt/nextride/flutter_assets"
 # Bildschirmdrehung in Grad
 ROTATION_ANGLE="180"
 
+# HASSIO_*-Variablen, siehe README.md (Datei mit chmod 600 anlegen).
+ENV_FILE=/etc/nextride2.env
+if [ -r "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE"
+    set +a
+fi
+
 SESSION_NAME="flutter_pi_nextride"
 LOGFILE=/var/log/flutter_pi_nextride.log
 
