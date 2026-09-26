@@ -20,6 +20,7 @@ class HassioProvider extends ChangeNotifier {
 
   final String baseURI;
   final String authToken;
+  // Leere Entity-Namen (Umgebungsvariable nicht gesetzt) werden uebersprungen.
   final String timerName;
   final String textName;
   final String wcbusyName;
@@ -140,6 +141,9 @@ class HassioProvider extends ChangeNotifier {
   /// ein einzelner Ausfall (Netzwerk, unbekanntes Attribut) nicht die ganze
   /// Anzeige mit einer unbehandelten Exception aus dem Timer-Callback killt.
   Future<T?> _fetchState<T extends HassioState>(String entity, T Function(HassioState) convert) async {
+    if (entity.isEmpty) {
+      return null;
+    }
     try {
       final Map<String, dynamic> json = await getHassioState(entity);
       return convert(HassioState.fromJson(json));

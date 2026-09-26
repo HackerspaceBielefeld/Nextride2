@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:nextride2/providers/clock_provider.dart';
 import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
@@ -18,6 +20,16 @@ import 'screens/nextride_screen.dart';
 void main() {
   timeago.setLocaleMessages('de', timeago.DeMessages());
 
+  // Home-Assistant-Endpunkt, Token und Entity-Namen kommen aus der Umgebung,
+  // damit keine Zugangsdaten im Asset-Bundle landen. Abschliessende Slashes werden
+  // entfernt, weil die Pfade mit '/api/...' angehaengt werden.
+  final hassioBaseURI = _env('HASSIO_BASE_URI').replaceAll(RegExp(r'/+$'), '');
+  final hassioAuthToken = _env('HASSIO_TOKEN');
+  final hassioConfigured = hassioBaseURI.isNotEmpty && hassioAuthToken.isNotEmpty;
+  if (constants.withHassio && !hassioConfigured) {
+    debugPrint('HASSIO_BASE_URI und/oder HASSIO_TOKEN nicht gesetzt - Home Assistant deaktiviert.');
+  }
+
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => TimetableProvider()),
     ChangeNotifierProvider(create: (context) => CalendarProvider()),
@@ -27,15 +39,17 @@ void main() {
     ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
-            baseURI: constants.hassioBaseURI,
-            authToken: constants.hassioAuthToken,
-            timerName: constants.hassioTimerEntity,
-            textName: constants.hassioTextEntity,
-            wcbusyName: constants.hassioWCBusy,
-            leistungName: constants.hassioLeistung,
-            enabled: constants.withHassio)),
+            baseURI: hassioBaseURI,
+            authToken: hassioAuthToken,
+            timerName: _env('HASSIO_TIMER_ENTITY'),
+            textName: _env('HASSIO_TEXT_ENTITY'),
+            wcbusyName: _env('HASSIO_WCBUSY_ENTITY'),
+            leistungName: _env('HASSIO_LEISTUNG_ENTITY'),
+            enabled: constants.withHassio && hassioConfigured)),
   ], child: const Nextride2App()));
 }
+
+String _env(String name) => (Platform.environment[name] ?? '').trim();
 
 class Nextride2App extends StatefulWidget {
   const Nextride2App({super.key});
