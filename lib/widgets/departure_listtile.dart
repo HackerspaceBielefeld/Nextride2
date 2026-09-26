@@ -36,18 +36,13 @@ class RideListTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          false
-              ? Text(
-                  '${item.orgHour.toString().padLeft(2, '0')}:${item.orgMinute.toString().padLeft(2, '0')}',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                )
-              : Text(
-                  timeago.format(item.fullTimeDT, locale: 'de', allowFromNow: true),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(decoration: isCanceled ? TextDecoration.lineThrough : null),
-                ),
+          Text(
+            timeago.format(item.fullTimeDT, locale: 'de', allowFromNow: true),
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(decoration: isCanceled ? TextDecoration.lineThrough : null),
+          ),
           Text(
             isCanceled
                 ? '❌'

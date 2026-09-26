@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/calendar_item.dart';
 
 class CalendarListTile extends StatelessWidget {
-  CalendarItem item;
+  final CalendarItem item;
 
-  CalendarListTile(this.item, {super.key});
+  const CalendarListTile(this.item, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +18,9 @@ class CalendarListTile extends StatelessWidget {
 
     for (var name in item.categories) {
       categories.add(Chip(
-          labelStyle: TextStyle(fontSize: 10),
+          labelStyle: const TextStyle(fontSize: 10),
           backgroundColor: Colors.grey.shade200,
-          label: Text(name),
+          label: Text(name.toString()),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap));
     }
 
@@ -39,7 +39,7 @@ class CalendarListTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
-            constraints: BoxConstraints(minWidth: 50),
+            constraints: const BoxConstraints(minWidth: 50),
             alignment: Alignment.center,
             child: Icon(
               item.icon.itemicon,

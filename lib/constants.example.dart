@@ -15,11 +15,11 @@ Map<int, String> requestStations = {
 String openWeatherAPIKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 String weatherCityName = 'Bielefeld';
 
-String hassioBaseURI = 'http://1.2.3.4:8123/';
-String hassioAuthToken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-String hassioTimerEntity = 'timer.bestelltimer';
-String hassioTextEntity = 'input_text.displaytext';
-String hassioWCBusy = 'input_boolean.wc_busy';
-String hassioLeistung = 'sensor.leistung_total';
+// Home-Assistant-Anbindung komplett deaktivieren (wird in main.dart geprueft).
+bool withHassio = true;
+
+// Endpunkt, Token und Entity-Namen kommen zur Laufzeit aus der Umgebung,
+// siehe README.md. Fehlt HASSIO_BASE_URI oder HASSIO_TOKEN, bleibt die
+// Anbindung deaktiviert; nicht gesetzte Entities werden uebersprungen.
 
 String rocketLaunchEndpoint = 'https://fdo.rocketlaunch.live/json/launches/next/5';

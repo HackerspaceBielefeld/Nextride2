@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class DepartureData {
   final String name;
   final String lineNumber;

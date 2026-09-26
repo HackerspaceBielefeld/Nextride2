@@ -4,7 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
+# HASSIO_*-Variablen, siehe README.md (Datei mit chmod 600 anlegen).
+EnvironmentFile=-/etc/nextride2.env
 ExecStart=/usr/local/bin/flutter-pi /opt/nextride/flutter_assets
+# Ein Wanddisplay soll nach einem Absturz von allein wiederkommen.
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:nextride2/models/rocket_launch_data_store.dart';
 
 class RocketLaunchProvider with ChangeNotifier {
-  late Timer _updateTimer;
+  late final Timer _updateTimer;
   final String endpoint;
   bool loading = false;
   RocketLaunchDataStore? rocketLaunchDataStore;
@@ -20,26 +20,33 @@ class RocketLaunchProvider with ChangeNotifier {
   Future<void> fetch() async {
     loading = true;
 
-    http.Response response = await http
-        .get(Uri.parse(endpoint), headers: {"Cache-Control": "no-store"});
+    try {
+      http.Response response = await http.get(Uri.parse(endpoint), headers: {"Cache-Control": "no-store"});
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> jsondata = jsonDecode(response.body);
-      try {
-        if (rocketLaunchDataStore == null) {
-          rocketLaunchDataStore =
-              RocketLaunchDataStore.fromJson(jsondata['result']);
-        } else {
-          rocketLaunchDataStore!.addFromJson(jsondata['result']);
-        }
-      } catch (e) {
-        print("error parse rocket launch");
-        print(e.toString());
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load rocket launches (${response.statusCode})');
       }
-    } else {
-      throw Exception('Failed to load status');
+
+      Map<String, dynamic> jsondata = jsonDecode(response.body);
+      final List<dynamic> result = jsondata['result'] as List<dynamic>;
+
+      if (rocketLaunchDataStore == null) {
+        rocketLaunchDataStore = RocketLaunchDataStore.fromJson(result);
+      } else {
+        rocketLaunchDataStore!.addFromJson(result);
+        rocketLaunchDataStore!.cleanup();
+      }
+    } catch (e) {
+      debugPrint('Rocket launch update failed: $e');
     }
+
     loading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _updateTimer.cancel();
+    super.dispose();
   }
 }

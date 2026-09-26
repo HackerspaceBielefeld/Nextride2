@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
 import '../constants.dart' as constants;
 
@@ -10,11 +10,11 @@ import 'package:weather/weather.dart';
 class WeatherProvider extends ChangeNotifier {
   bool loading = true;
 
-  late WeatherFactory _wf;
+  late final WeatherFactory _wf;
   List<Weather> forecast = [];
-  late Timer _updateTimer;
+  late final Timer _updateTimer;
 
-  static Map<String, IconData> weatherIcons = {
+  static const Map<String, IconData> weatherIcons = {
     '01d': MdiIcons.weatherSunny,
     '02d': MdiIcons.weatherPartlyCloudy,
     '03d': MdiIcons.weatherCloudy,
@@ -36,8 +36,7 @@ class WeatherProvider extends ChangeNotifier {
   };
 
   WeatherProvider() {
-    _wf =
-        WeatherFactory(constants.openWeatherAPIKey, language: Language.GERMAN);
+    _wf = WeatherFactory(constants.openWeatherAPIKey, language: Language.GERMAN);
 
     _updateTimer = Timer.periodic(const Duration(hours: 1), (timer) {
       update();
@@ -52,31 +51,6 @@ class WeatherProvider extends ChangeNotifier {
     return MdiIcons.helpRhombusOutline;
   }
 
-  /*  List<List<Weather>> groupAndSortWeatherByDate(List<Weather> weatherList) {
-    Map<DateTime, List<Weather>> weatherByDate = {};
-    for (Weather weather in weatherList) {
-      if (weather.date == null) continue;
-
-      DateTime date = DateTime(
-          weather.date!.year, weather.date!.month, weather.date!.day);
-      if (!weatherByDate.containsKey(date)) {
-        weatherByDate[date] = [];
-      }
-      weatherByDate[date]!.add(weather);
-    }
-
-    List<DateTime> dates = weatherByDate.keys.toList();
-    dates.sort();
-
-    List<List<Weather>> result = [];
-    for (DateTime date in dates) {
-      result.add(weatherByDate[date]!);
-    }
-
-    return result;
-  }
-  */
-
   Map<DateTime, List<Weather>> groupAndSortWeatherByDate() {
     Map<DateTime, List<Weather>> weatherByDate = {};
     for (Weather weather in forecast) {
@@ -84,8 +58,7 @@ class WeatherProvider extends ChangeNotifier {
         continue;
       }
 
-      DateTime date =
-          DateTime(weather.date!.year, weather.date!.month, weather.date!.day);
+      DateTime date = DateTime(weather.date!.year, weather.date!.month, weather.date!.day);
       if (!weatherByDate.containsKey(date)) {
         weatherByDate[date] = [];
       }
@@ -106,9 +79,20 @@ class WeatherProvider extends ChangeNotifier {
   Future<void> update() async {
     loading = true;
 
-    forecast = await _wf.fiveDayForecastByCityName(constants.weatherCityName);
+    // Bei einem Fehler bleibt der letzte Forecast stehen statt zu verschwinden.
+    try {
+      forecast = await _wf.fiveDayForecastByCityName(constants.weatherCityName);
+    } catch (e) {
+      debugPrint('Weather update failed: $e');
+    }
 
     loading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _updateTimer.cancel();
+    super.dispose();
   }
 }

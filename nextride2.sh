@@ -6,51 +6,73 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Flutter Pi Nextride
-# Description:       Starts, stops, restarts, and checks the status of the /home/pi/nextride script rotated by 180 degrees.
+# Description:       Starts, stops, restarts, and checks the status of the nextride display.
 ### END INIT INFO
 
-# Change the following to the path of your nextride script
-SCRIPT_PATH="/home/pi/nextride"
+# Pfad zu den kompilierten Flutter-Assets
+ASSET_PATH="/opt/nextride/flutter_assets"
 
-# Change the following to the rotation angle you want (in degrees)
+# Bildschirmdrehung in Grad
 ROTATION_ANGLE="180"
 
-# Do not modify the following
-PIDFILE=/var/run/flutter_pi_nextride.pid
+# HASSIO_*-Variablen, siehe README.md (Datei mit chmod 600 anlegen).
+ENV_FILE=/etc/nextride2.env
+if [ -r "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE"
+    set +a
+fi
+
+SESSION_NAME="flutter_pi_nextride"
 LOGFILE=/var/log/flutter_pi_nextride.log
+
+# Liefert die PID der screen-Session bzw. nichts, wenn sie nicht laeuft.
+session_pid() {
+    /usr/bin/screen -ls "$SESSION_NAME" 2>/dev/null \
+        | sed -n "s/^[[:space:]]*\([0-9][0-9]*\)\.$SESSION_NAME[[:space:]].*/\1/p" \
+        | head -n 1
+}
 
 case "$1" in
     start)
-        if [ -f $PIDFILE ]; then
+        if [ -n "$(session_pid)" ]; then
             echo "Flutter Pi Nextride is already running."
             exit 1
         fi
         echo "Starting Flutter Pi Nextride..."
-        
-        /usr/bin/screen -dmS flutter_pi_nextride /usr/local/bin/flutter-pi -r 180 /opt/nextride/flutter_assets >> $LOGFILE 2>&1
-        echo $! > $PIDFILE
-        echo "Flutter Pi Nextride started."
+
+        # -L/-Logfile: sonst landet die Ausgabe in der Session und nicht im Log,
+        # denn 'screen -dm' kehrt sofort zurueck.
+        /usr/bin/screen -dmS "$SESSION_NAME" -L -Logfile "$LOGFILE" \
+            /usr/local/bin/flutter-pi -r "$ROTATION_ANGLE" "$ASSET_PATH"
+
+        if [ -z "$(session_pid)" ]; then
+            echo "Failed to start Flutter Pi Nextride, see $LOGFILE."
+            exit 1
+        fi
+        echo "Flutter Pi Nextride started (pid $(session_pid))."
         ;;
     stop)
-        if [ ! -f $PIDFILE ]; then
+        if [ -z "$(session_pid)" ]; then
             echo "Flutter Pi Nextride is not running."
             exit 1
         fi
         echo "Stopping Flutter Pi Nextride..."
-        kill $(cat $PIDFILE)
-        rm $PIDFILE
+        /usr/bin/screen -S "$SESSION_NAME" -X quit
         echo "Flutter Pi Nextride stopped."
         ;;
     restart)
-        $0 stop
+        "$0" stop
         sleep 1
-        $0 start
+        "$0" start
         ;;
     status)
-        if [ -f $PIDFILE ]; then
-            echo "Flutter Pi Nextride is running (pid $(cat $PIDFILE))."
+        PID="$(session_pid)"
+        if [ -n "$PID" ]; then
+            echo "Flutter Pi Nextride is running (pid $PID)."
         else
             echo "Flutter Pi Nextride is not running."
+            exit 3
         fi
         ;;
     *)
