@@ -364,7 +364,15 @@ class NextrideScreen extends StatelessWidget {
                         Consumer<RocketLaunchProvider>(
                           builder: (context, rlp, child) {
                             if (rlp.rocketLaunchDataStore == null) {
-                              return const CircularProgressIndicator();
+                              // Muss in ein Center: GridView zwingt seinen
+                              // Kindern feste Constraints in Zellengroesse auf,
+                              // und der Indicator hat nur eine Mindestgroesse
+                              // (36x36), keine Maximalgroesse. Direkt in der
+                              // Zelle wird der Kreisbogen deshalb in ein
+                              // 2:1-Rechteck gemalt und sieht oval aus.
+                              return const Card(
+                                child: Center(child: CircularProgressIndicator()),
+                              );
                             }
 
                             return Card(
