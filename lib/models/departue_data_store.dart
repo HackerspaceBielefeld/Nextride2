@@ -3,61 +3,43 @@ import 'departure_data.dart';
 class DepartureDataStore {
   DepartureDataStore();
 
-  final List<DepartureData> _items = [];
+  // Pro Haltestelle die Abfahrten des letzten erfolgreichen Abrufs.
+  final Map<String, List<DepartureData>> _byStation = {};
+  List<DepartureData> _items = [];
 
   List<DepartureData> get items => _items;
 
-  factory DepartureDataStore.fromJson(List<dynamic> json) {
-    DepartureDataStore result = DepartureDataStore();
-    for (var element in json) {
-      result.add(DepartureData.fromJson(element));
-    }
-    return result;
-  }
-
-  void add(DepartureData entry) {
-    int oldIdx = _items.indexWhere((element) => element.key == entry.key);
-    if (oldIdx >= 0) {
-      // An Ort und Stelle ersetzen, danach neu einsortieren. Frueher wurde der
-      // alte Eintrag geloescht und der neue angehaengt - dadurch ist jede
-      // aktualisierte Abfahrt ans Listenende gerutscht und die Anzeige der
-      // naechsten N Abfahrten zeigte die falschen Fahrten.
-      _items[oldIdx] = entry;
-    } else {
-      _items.add(entry);
-    }
-
-    _items.sort((a, b) => a.fullTime.compareTo(b.fullTime));
-  }
-
-  void addFromJson(List<dynamic> json) {
-    for (var element in json) {
-      add(DepartureData.fromJson(element));
-    }
+  /// Ersetzt die Abfahrten einer Haltestelle komplett. Fahrten, die die EFA
+  /// nicht mehr liefert, verschwinden so sofort statt bis zu ihrer
+  /// Abfahrtszeit stehen zu bleiben.
+  void replaceStation(String stationId, List<DepartureData> departures) {
+    // Kopie: cleanup() entfernt daraus, die Liste des Aufrufers bleibt unberuehrt.
+    _byStation[stationId] = List.of(departures);
+    _rebuild();
   }
 
   /// Entfernt alle bereits abgefahrenen Verbindungen.
   void cleanup() {
-    int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final DateTime now = DateTime.now();
     // removeWhere statt where().forEach(remove) - letzteres modifiziert die
     // Liste waehrend ueber ihre Lazy-View iteriert wird (ConcurrentModificationError).
-    _items.removeWhere((element) => element.fullTime < now);
-  }
-
-  Set<String> getRouteNames() {
-    Set<String> result = {};
-    for (var element in _items) {
-      result.add(element.route);
+    for (final departures in _byStation.values) {
+      departures.removeWhere((element) => element.time.isBefore(now));
     }
-    return result;
+    _rebuild();
   }
 
-  List<DepartureData> getByRouteName(String route) {
-    return _items.where((element) => element.route == route).toList();
-  }
+  void _rebuild() {
+    // Doppelte Eintraege (z.B. dieselbe Fahrt an zwei abgefragten
+    // Haltestellen-IDs) ueber den Schluessel zusammenfassen.
+    final Map<String, DepartureData> unique = {};
+    for (final departures in _byStation.values) {
+      for (final departure in departures) {
+        unique[departure.key] = departure;
+      }
+    }
 
-  List<DepartureData> getByDirectionCode(String code) {
-    return _items.where((element) => element.directionCode == code).toList();
+    _items = unique.values.toList()..sort((a, b) => a.time.compareTo(b.time));
   }
 
   @override

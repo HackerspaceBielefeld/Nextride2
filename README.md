@@ -1,7 +1,7 @@
 # nextride2
 
 Abfahrtsmonitor / Info-Display (Flutter, laeuft per `flutter-pi` auf einem Raspberry Pi).
-Zeigt VRR-Abfahrten, Kalender, Wetter, Raketenstarts sowie Home-Assistant-Werte
+Zeigt Abfahrten (EFA von Westfalenfahrplan), Kalender, Wetter, Raketenstarts sowie Home-Assistant-Werte
 (Displaytext, Bestelltimer, WC-Status, Leistungsaufnahme).
 
 ## Setup
@@ -17,6 +17,19 @@ $EDITOR lib/constants.dart   # API-Keys, Haltestellen-IDs eintragen
 flutter pub get
 flutter analyze
 ```
+
+Abfahrten kommen aus dem EFA `XML_DM_REQUEST` von Westfalenfahrplan
+(`efaEndpoint`), die Haltestellen stehen in `requestStations`
+(EFA-ID, z.B. `de:05711:5614`). Linienfarben (Hintergrund und Text) werden
+beim Start von stadtbahn.live geladen (`lineColorsEndpoint`) und ueber die
+globale Linien-ID (`global_id` bzw. EFA `globalId`) zugeordnet; unbekannte
+Linien erscheinen navy mit weisser Schrift.
+
+**Umstieg von VRR:** Eine bestehende `lib/constants.dart` muss angepasst
+werden, sonst baut das Projekt nicht: `endpoint` wird zu `efaEndpoint`,
+`requestStations` ist jetzt `Map<String, String>`, `mobielLineColors`
+entfaellt und `lineColorsEndpoint` kommt hinzu (siehe
+`lib/constants.example.dart`).
 
 Home-Assistant-Endpunkt, Token und Entity-Namen werden zur Laufzeit aus der
 Umgebung gelesen:

@@ -1,15 +1,16 @@
-import 'package:flutter/material.dart';
-
 String buildInfo = "Nextride v2.0.0";
 
-String endpoint = "https://haltestellenmonitor.vrr.de";
+// EFA von Westfalenfahrplan (NWL), liefert die Abfahrten.
+String efaEndpoint = "https://www.westfalenfahrplan.de/nwl-efa";
 
-Map<String, Color> mobielLineColors = {'1': Colors.blue, '2': Colors.lightGreen, '3': Colors.yellow, '4': Colors.red};
+// Linienfarben (Hintergrund + Text), werden beim Start geladen.
+String lineColorsEndpoint = 'https://stadtbahn.live/api/v1/lines';
 
-Map<int, String> requestStations = {
-  //23005500: 'Bielefeld HBF',
-  //23005001: 'Adenauerplatz',
-  23005614: 'Bielefeld+Ziegelstraße',
+// EFA-Haltestellen-ID (DHID oder numerisch) -> Bezeichnung.
+Map<String, String> requestStations = {
+  //'de:05711:5500': 'Bielefeld Hbf',
+  //'de:05711:5001': 'Adenauerplatz',
+  'de:05711:5614': 'Ziegelstraße',
 };
 
 String openWeatherAPIKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';

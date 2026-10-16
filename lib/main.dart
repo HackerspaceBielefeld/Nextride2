@@ -13,6 +13,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'providers/calendar_provider.dart';
 import 'providers/hassio_provider.dart';
+import 'providers/line_color_provider.dart';
 import 'providers/timetable_provider.dart';
 import 'providers/weather_provider.dart';
 import 'screens/nextride_screen.dart';
@@ -37,6 +38,7 @@ void main() {
     ChangeNotifierProvider(create: (context) => ClockProvider()),
     ChangeNotifierProvider(create: (context) => NetworkProvider()),
     ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
+    ChangeNotifierProvider(create: (context) => LineColorProvider(endpoint: constants.lineColorsEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
             baseURI: hassioBaseURI,
@@ -64,6 +66,7 @@ class _Nextride2AppState extends State<Nextride2App> {
     super.initState();
 
     Provider.of<TimetableProvider>(context, listen: false).fetch();
+    Provider.of<LineColorProvider>(context, listen: false).fetch();
     Provider.of<CalendarProvider>(context, listen: false).update();
     Provider.of<WeatherProvider>(context, listen: false).update();
 
@@ -101,7 +104,10 @@ class _Nextride2AppState extends State<Nextride2App> {
           primaryColor: Colors.red,
           // Auf dem Text-Theme des Dark-Themes aufsetzen, sonst waeren die
           // Textfarben die des hellen Fallback-Themes (unlesbar auf dunkel).
-          textTheme: ThemeData.dark().textTheme.apply(
+          // Dessen Styles haben keine Schriftgroesse (die kommt erst ueber
+          // Theme.of dazu) - ohne die Geometrie scheitert apply(fontSizeFactor)
+          // an einer Assertion.
+          textTheme: Typography.englishLike2021.merge(ThemeData.dark().textTheme).apply(
                 fontSizeFactor: fontSizeFactor,
                 fontSizeDelta: fontSizeDelta,
               ),

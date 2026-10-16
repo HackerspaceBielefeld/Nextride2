@@ -50,5 +50,4 @@ app.*.map.json
 /ios/
 /windows/
 /macos/
-/test/
 /lib/constants.dart
