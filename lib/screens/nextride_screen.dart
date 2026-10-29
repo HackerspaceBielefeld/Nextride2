@@ -187,6 +187,16 @@ class SpaceGridCard extends StatelessWidget {
               */
               const int maxCols = 6;
 
+              // Hinweis nur, wenn kein alter Forecast mehr da ist, der stehen bleiben kann.
+              if (wp.forecast.isEmpty && wp.error != null) {
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Center(child: Text(wp.error!, style: Theme.of(context).textTheme.labelMedium)),
+                  ),
+                );
+              }
+
               return GridView.count(
                 shrinkWrap: true,
                 childAspectRatio: 1,
