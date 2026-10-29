@@ -18,17 +18,26 @@ flutter pub get
 flutter analyze
 ```
 
-Abfahrten kommen aus dem EFA `XML_DM_REQUEST` von Westfalenfahrplan
-(`efaEndpoint`), die Haltestellen stehen in `requestStations`
-(EFA-ID, z.B. `de:05711:5614`). Linienfarben (Hintergrund und Text) werden
-beim Start von stadtbahn.live geladen (`lineColorsEndpoint`) und ueber die
-globale Linien-ID (`global_id` bzw. EFA `globalId`) zugeordnet; unbekannte
-Linien erscheinen navy mit weisser Schrift.
+Woher die Abfahrten kommen, legt `departureSource` in `lib/constants.dart` fest:
+
+| Quelle | Haltestellen | Hinweis |
+|---|---|---|
+| `efa` (Standard) | `requestStations`, DHID (`de:05711:5614`) | EFA `XML_DM_REQUEST` von Westfalenfahrplan |
+| `vrr` | `vrrStations`, VRR-ID (`23005614`) | VRR-Haltestellenmonitor |
+| `stadtbahnLive` | `requestStations`, DHID | experimentell: Anzeigetafeln von stadtbahn.live, nur Haltestellen mit Tafel, Ziele fehlen oft |
+
+Weitere Quellen implementieren `DepartureSource` (`lib/service/departure_source.dart`).
+
+Linienfarben (Hintergrund und Text) werden beim Start von stadtbahn.live
+geladen (`lineColorsEndpoint`) und je nach Quelle ueber die globale Linien-ID
+(EFA), den EFA-Liniencode (VRR) oder die stadtbahn.live-Linie zugeordnet;
+unbekannte Linien erscheinen navy mit weisser Schrift.
 
 **Umstieg von VRR:** Eine bestehende `lib/constants.dart` muss angepasst
 werden, sonst baut das Projekt nicht: `endpoint` wird zu `efaEndpoint`,
 `requestStations` ist jetzt `Map<String, String>`, `mobielLineColors`
-entfaellt und `lineColorsEndpoint` kommt hinzu (siehe
+entfaellt; neu sind `departureSource`, `vrrEndpoint`, `vrrStations`,
+`stadtbahnLiveEndpoint` und `lineColorsEndpoint` (siehe
 `lib/constants.example.dart`).
 
 Home-Assistant-Endpunkt, Token und Entity-Namen werden zur Laufzeit aus der

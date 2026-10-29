@@ -1,20 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:nextride2/service/api_client.dart';
 
-import '../constants.dart' as constants;
 import '../models/departue_data_store.dart';
-import '../models/departure_data.dart';
+import '../service/departure_source.dart';
 
 class TimetableProvider extends ChangeNotifier {
   DepartureDataStore? timetable;
 
+  final DepartureSource source;
+  // Haltestellen-ID (Format je nach Quelle) -> Bezeichnung.
+  final Map<String, String> stations;
+
   late final Timer _updateTimer;
   late final Timer _maintainanceTimer;
 
-  TimetableProvider() {
+  TimetableProvider({required this.source, required this.stations}) {
     _updateTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
       fetch();
     });
@@ -22,23 +23,6 @@ class TimetableProvider extends ChangeNotifier {
     _maintainanceTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       maintainance();
     });
-  }
-
-  Map<String, String> _requestParameters(String stationId) {
-    //TODO: Konfigurierbar machen
-    return {
-      'outputFormat': 'rapidJSON',
-      'language': 'de',
-      'type_dm': 'any',
-      'name_dm': stationId,
-      'mode': 'direct',
-      // Beide noetig, damit onwardLocations (fuer den Ziel-Kurznamen) kommen.
-      'depType': 'stopEvents',
-      'includeCompleteStopSeq': '1',
-      'useRealtime': '1',
-      'limit': '10',
-      'useAllStops': '1',
-    };
   }
 
   void cleanup() {
@@ -59,7 +43,7 @@ class TimetableProvider extends ChangeNotifier {
 
   Future<void> fetch() async {
     try {
-      await Future.wait(constants.requestStations.keys.map(fetchStation));
+      await Future.wait(stations.keys.map(fetchStation));
     } catch (e) {
       // Timer-Callback: eine Exception waere hier unbehandelt. Vorhandene
       // Abfahrten bleiben stehen, beim naechsten Durchlauf wird neu versucht.
@@ -70,17 +54,7 @@ class TimetableProvider extends ChangeNotifier {
   }
 
   Future<void> fetchStation(String stationId) async {
-    APIClientResponse response = await APIClient.get('XML_DM_REQUEST', _requestParameters(stationId));
-
-    final decoded = jsonDecode(response.item1.body);
-    final List<dynamic> stopEvents = (decoded['stopEvents'] as List<dynamic>?) ?? const [];
-
-    final List<DepartureData> departures = stopEvents
-        .whereType<Map<String, dynamic>>()
-        .map(DepartureData.tryFromEfa)
-        .whereType<DepartureData>()
-        .toList();
-
+    final departures = await source.fetchStation(stationId, stations[stationId] ?? '');
     (timetable ??= DepartureDataStore()).replaceStation(stationId, departures);
   }
 
