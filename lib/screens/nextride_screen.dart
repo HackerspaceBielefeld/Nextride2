@@ -60,39 +60,6 @@ class CalendarGridCard extends StatelessWidget {
   }
 }
 
-class RouteGridCard extends StatelessWidget {
-  final String route;
-  final DepartureDataStore departureDataStore;
-
-  const RouteGridCard({super.key, required this.route, required this.departureDataStore});
-
-  @override
-  Widget build(BuildContext context) {
-    List<DepartureData> items = departureDataStore.getByRouteName(route);
-
-    return Card(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            route,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return RideListTile(
-                item: items[index],
-              );
-            },
-          )
-        ],
-      ),
-    );
-  }
-}
-
 class DepartureGridCard extends StatelessWidget {
   final String lineName;
   final DepartureDataStore departureDataStore;
@@ -294,8 +261,6 @@ class NextrideScreen extends StatelessWidget {
                 );
               }
 
-              //Set<String> routeNames = ttp.timetable!.getRouteNames();
-
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -370,7 +335,7 @@ class NextrideScreen extends StatelessWidget {
                       crossAxisCount: 2,
                       childAspectRatio: 20 / 10,
                       children: [
-                        DepartureGridCard(departureDataStore: ttp.timetable!, lineName: 'Linie 2'),
+                        DepartureGridCard(departureDataStore: ttp.timetable!, lineName: 'Abfahrten'),
                         Consumer<RocketLaunchProvider>(
                           builder: (context, rlp, child) {
                             if (rlp.rocketLaunchDataStore == null) {
@@ -419,24 +384,6 @@ class NextrideScreen extends StatelessWidget {
                         const SpaceGridCard(),
                       ],
                     )
-                    /*
-                    GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 2,
-                      childAspectRatio: 20 / 10,
-                      children: List.generate(routeNames.length, (index) {
-                        return RouteGridCard(
-                            departureDataStore: ttp.timetable!,
-                            route: routeNames.elementAt(index));
-                      })
-                        ..addAll([
-                          CalendarGridCard(
-                            calItems: cp.items,
-                          ),
-                          const SpaceGridCard(),
-                        ]),
-                    )
-                    */
                     /*
                     ListView.builder(
                       itemCount: ttp.timetable!.items.length,
