@@ -1,9 +1,15 @@
 import 'package:intl/intl.dart';
 
-/// Eine Abfahrt aus dem EFA-DM_REQUEST (rapidJSON, `stopEvents[]`).
+/// Eine Abfahrt, unabhaengig von der Quelle (EFA, VRR, stadtbahn.live).
 class DepartureData {
   final String lineName;
+  // Schluessel fuer die Linienfarbe, je nach Quelle ist nur einer gesetzt
+  // (siehe LineColorTable.lookupDeparture).
   final String? globalId;
+  /// EFA-Liniennummer ('31002' fuer die Stadtbahn 2), liefert der VRR.
+  final String? lineCode;
+  /// Linienkennung von stadtbahn.live ('4', '901' fuer N1).
+  final String? stadtbahnLiveLine;
   final int? productClass;
   final String destination;
   final String? platform;
@@ -16,6 +22,8 @@ class DepartureData {
   DepartureData(
       {required this.lineName,
       this.globalId,
+      this.lineCode,
+      this.stadtbahnLiveLine,
       this.productClass,
       required this.destination,
       this.platform,
@@ -106,6 +114,60 @@ class DepartureData {
       isMonitored: realtimeStatus.contains('MONITORED'),
       isCancelled: stopEvent['isCancelled'] == true || realtimeStatus.contains('TRIP_CANCELLED'),
       key: '${transportation['id']}|${stopEvent['location']?['id']}|${stopEvent['departureTimePlanned']}',
+    );
+  }
+
+  /// Eintrag aus `departureData[]` des VRR-Haltestellenmonitors. Liefert null
+  /// fuer Eintraege ohne Linie oder Abfahrtszeit.
+  static DepartureData? tryFromVrr(Map<String, dynamic> json) {
+    final String lineName = ((json['lineNumber'] ?? json['name'] ?? '') as String).trim();
+    final int? plannedEpoch = int.tryParse('${json['orgFullTime']}');
+    final int? estimatedEpoch = int.tryParse('${json['fullTime']}');
+    if (lineName.isEmpty || plannedEpoch == null) {
+      return null;
+    }
+
+    final bool isMonitored = json['isRealTime'] == true;
+    final DateTime planned = DateTime.fromMillisecondsSinceEpoch(plannedEpoch * 1000);
+
+    return DepartureData(
+      lineName: lineName,
+      lineCode: json['lineCode'] as String?,
+      destination: _processDirection(json['direction'] as String?),
+      platform: json['platform'] as String?,
+      planned: planned,
+      estimated: isMonitored && estimatedEpoch != null
+          ? DateTime.fromMillisecondsSinceEpoch(estimatedEpoch * 1000)
+          : null,
+      isMonitored: isMonitored,
+      // Der VRR kennzeichnet Ausfaelle mit der Verspaetung -9999.
+      isCancelled: '${json['delay']}' == '-9999',
+      key: 'vrr|${json['lineCode']}|${json['directionCode']}|$plannedEpoch',
+    );
+  }
+
+  /// Zeile einer Anzeigetafel aus stadtbahn.live/api/v1/dfi. Liefert null fuer
+  /// Zeilen ohne Linie oder Abfahrtszeit (die API liefert viele Platzhalter).
+  static DepartureData? tryFromStadtbahnLiveDfi(Map<String, dynamic> board, Map<String, dynamic> row) {
+    final String? line = (row['line'] as String?)?.trim();
+    final DateTime? departure = _parseTime(row['departure']);
+    if (line == null || line.isEmpty || departure == null) {
+      return null;
+    }
+
+    // Die Zeiten kommen aus den Fahrzeugdaten, sind also immer Echtzeit.
+    final DateTime planned = _parseTime(row['planned']) ?? departure;
+
+    return DepartureData(
+      lineName: line,
+      stadtbahnLiveLine: line,
+      destination: (row['destination'] as String?) ?? '',
+      platform: board['label'] as String?,
+      planned: planned,
+      estimated: departure,
+      isMonitored: true,
+      isCancelled: false,
+      key: 'dfi|${board['stop']}|$line|${row['fleet_number'] ?? row['slot']}|${row['planned'] ?? row['departure']}',
     );
   }
 

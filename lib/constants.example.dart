@@ -1,16 +1,34 @@
+import 'package:nextride2/service/departure_source.dart';
+
 String buildInfo = "Nextride v2.0.0";
 
-// EFA von Westfalenfahrplan (NWL), liefert die Abfahrten.
+// Woher die Abfahrten kommen: efa, vrr oder stadtbahnLive (experimentell),
+// siehe DepartureSourceType.
+DepartureSourceType departureSource = DepartureSourceType.efa;
+
+// EFA von Westfalenfahrplan (NWL).
 String efaEndpoint = "https://www.westfalenfahrplan.de/nwl-efa";
+
+// VRR-Haltestellenmonitor.
+String vrrEndpoint = "https://haltestellenmonitor.vrr.de";
+
+// stadtbahn.live, Anzeigetafeln an einigen Stadtbahn-Haltestellen.
+String stadtbahnLiveEndpoint = "https://stadtbahn.live";
 
 // Linienfarben (Hintergrund + Text), werden beim Start geladen.
 String lineColorsEndpoint = 'https://stadtbahn.live/api/v1/lines';
 
-// EFA-Haltestellen-ID (DHID oder numerisch) -> Bezeichnung.
+// Haltestellen fuer efa und stadtbahnLive: DHID -> Bezeichnung.
+// stadtbahnLive kennt nur Haltestellen mit Anzeigetafel (z.B. de:05711:5666 Universitaet).
 Map<String, String> requestStations = {
   //'de:05711:5500': 'Bielefeld Hbf',
   //'de:05711:5001': 'Adenauerplatz',
   'de:05711:5614': 'Ziegelstraße',
+};
+
+// Haltestellen fuer vrr: VRR-ID -> Name (geht mit in die Anfrage).
+Map<String, String> vrrStations = {
+  '23005614': 'Bielefeld+Ziegelstraße',
 };
 
 String openWeatherAPIKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';

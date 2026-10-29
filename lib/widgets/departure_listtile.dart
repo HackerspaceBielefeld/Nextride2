@@ -11,7 +11,7 @@ class RideListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LineColor lineColor = context.watch<LineColorProvider>().table.lookup(item.globalId) ?? LineColor.unknown;
+    final LineColor lineColor = context.watch<LineColorProvider>().table.lookupDeparture(item) ?? LineColor.unknown;
     final TextStyle textStyle = Theme.of(context).textTheme.bodyLarge ?? const TextStyle(fontSize: 16);
     final TextStyle rideStyle = textStyle.copyWith(decoration: item.isCancelled ? TextDecoration.lineThrough : null);
     final double fontSize = textStyle.fontSize ?? 16;

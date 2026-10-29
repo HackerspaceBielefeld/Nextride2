@@ -17,6 +17,7 @@ import 'providers/line_color_provider.dart';
 import 'providers/timetable_provider.dart';
 import 'providers/weather_provider.dart';
 import 'screens/nextride_screen.dart';
+import 'service/departure_source.dart';
 
 void main() {
   timeago.setLocaleMessages('de', timeago.DeMessages());
@@ -32,7 +33,10 @@ void main() {
   }
 
   runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (context) => TimetableProvider()),
+    ChangeNotifierProvider(
+        create: (context) => TimetableProvider(
+            source: DepartureSource.create(constants.departureSource, endpoint: _departureEndpoint()),
+            stations: _departureStations())),
     ChangeNotifierProvider(create: (context) => CalendarProvider()),
     ChangeNotifierProvider(create: (context) => WeatherProvider()),
     ChangeNotifierProvider(create: (context) => ClockProvider()),
@@ -52,6 +56,21 @@ void main() {
 }
 
 String _env(String name) => (Platform.environment[name] ?? '').trim();
+
+String _departureEndpoint() {
+  switch (constants.departureSource) {
+    case DepartureSourceType.efa:
+      return constants.efaEndpoint;
+    case DepartureSourceType.vrr:
+      return constants.vrrEndpoint;
+    case DepartureSourceType.stadtbahnLive:
+      return constants.stadtbahnLiveEndpoint;
+  }
+}
+
+// EFA und stadtbahn.live nutzen beide DHIDs, der VRR eigene numerische IDs.
+Map<String, String> _departureStations() =>
+    constants.departureSource == DepartureSourceType.vrr ? constants.vrrStations : constants.requestStations;
 
 class Nextride2App extends StatefulWidget {
   const Nextride2App({super.key});

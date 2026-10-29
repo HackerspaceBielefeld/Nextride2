@@ -320,9 +320,115 @@ void main() {
       expect(LineColorTable.fromStadtbahnLive(withoutIds).isEmpty, isTrue);
     });
 
+    test('findet Farben fuer VRR ueber den EFA-Liniencode', () {
+      final vrr = DepartureData.tryFromVrr(vrrDeparture())!;
+      expect(table.lookupDeparture(vrr)!.background, const Color(0xFF009037));
+    });
+
+    test('findet Farben fuer stadtbahn.live ueber die Linienkennung', () {
+      final dfi = DepartureData.tryFromStadtbahnLiveDfi(dfiBoard, dfiRow(line: '901'))!;
+      expect(table.lookupDeparture(dfi)!.background, const Color(0xFF0F2C68));
+    });
+
     test('Fallback kennt die Stadtbahnlinien', () {
       expect(LineColorTable.fallback.lookup('de:NWL:05711|Stadtbahn|1:')!.background, const Color(0xFF009EDF));
       expect(LineColorTable.fallback.lookup('de:NWL:05711|Stadtbahn|3:')!.foreground, const Color(0xFF000000));
+      expect(LineColorTable.fallback.lookupDeparture(DepartureData.tryFromVrr(vrrDeparture())!)!.background,
+          const Color(0xFF009037));
+    });
+  });
+
+  group('DepartureData.tryFromVrr', () {
+    test('parst eine Stadtbahn-Abfahrt mit Echtzeit', () {
+      final d = DepartureData.tryFromVrr(vrrDeparture())!;
+      expect(d.lineName, '2');
+      expect(d.lineCode, '31002');
+      expect(d.destination, 'Sieker');
+      expect(d.platform, 'Gleis 1');
+      expect(d.planned, DateTime.fromMillisecondsSinceEpoch(1793305080 * 1000));
+      expect(d.delayMinutes, 3);
+      expect(d.isMonitored, isTrue);
+      expect(d.isCancelled, isFalse);
+    });
+
+    test('ohne Echtzeit gibt es keine Verspaetung', () {
+      final d = DepartureData.tryFromVrr(vrrDeparture(isRealTime: false))!;
+      expect(d.estimated, isNull);
+      expect(d.delayMinutes, isNull);
+    });
+
+    test('erkennt Ausfaelle an delay -9999', () {
+      expect(DepartureData.tryFromVrr(vrrDeparture(delay: '-9999'))!.isCancelled, isTrue);
+    });
+
+    test('ueberspringt Eintraege ohne Zeit', () {
+      expect(DepartureData.tryFromVrr(vrrDeparture()..remove('orgFullTime')), isNull);
+    });
+  });
+
+  group('DepartureData.tryFromStadtbahnLiveDfi', () {
+    test('parst eine Tafelzeile', () {
+      final d = DepartureData.tryFromStadtbahnLiveDfi(dfiBoard, dfiRow())!;
+      expect(d.lineName, '4');
+      expect(d.stadtbahnLiveLine, '4');
+      expect(d.destination, 'Lohmannshof');
+      expect(d.platform, 'Bahnsteig');
+      expect(d.planned, DateTime.parse('2026-10-29T20:22:00Z').toLocal());
+      expect(d.delayMinutes, 2);
+      expect(d.isMonitored, isTrue);
+    });
+
+    test('ohne Planzeit gilt die Abfahrtszeit', () {
+      final d = DepartureData.tryFromStadtbahnLiveDfi(dfiBoard, dfiRow(planned: null))!;
+      expect(d.planned, d.estimated);
+      expect(d.delayMinutes, 0);
+    });
+
+    test('fehlendes Ziel bleibt leer', () {
+      expect(DepartureData.tryFromStadtbahnLiveDfi(dfiBoard, dfiRow(destination: null))!.destination, '');
+    });
+
+    test('ueberspringt Platzhalterzeilen ohne Linie', () {
+      expect(DepartureData.tryFromStadtbahnLiveDfi(dfiBoard, dfiRow(line: null)), isNull);
     });
   });
 }
+
+/// Gekuerzter Eintrag aus departureData[] des VRR-Haltestellenmonitors.
+Map<String, dynamic> vrrDeparture({bool isRealTime = true, String delay = '3'}) => {
+      'name': '2',
+      'lineNumber': '2',
+      'lineCode': '31002',
+      'subname': 'Stadtbahn',
+      'direction': 'Bielefeld, Sieker',
+      'directionCode': 'R',
+      'platform': 'Gleis 1',
+      'delay': delay,
+      'isRealTime': isRealTime,
+      'fullTime': '${1793305080 + 180}',
+      'orgFullTime': '1793305080',
+      'key': '490',
+    };
+
+/// Tafel aus stadtbahn.live/api/v1/dfi (gekuerzt).
+final Map<String, dynamic> dfiBoard = {
+  'kuerzel': 'UNI',
+  'label': 'Bahnsteig',
+  'stop': 'de:05711:5666',
+  'stop_name': 'Universität',
+};
+
+Map<String, dynamic> dfiRow({
+  String? line = '4',
+  String? destination = 'Lohmannshof',
+  String? planned = '2026-10-29T20:22:00Z',
+}) =>
+    {
+      'departure': '2026-10-29T20:24:00Z',
+      'destination': destination,
+      'fleet_number': 5030,
+      'line': line,
+      'planned': planned,
+      'slot': 6,
+      'source': 'carried',
+    };
