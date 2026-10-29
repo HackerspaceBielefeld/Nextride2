@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:tuple/tuple.dart';
 
-import '../constants.dart' as constants;
+import '../config.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as http;
@@ -31,7 +31,7 @@ http.Client get httpex {
 
   var ioClient = HttpClient();
   ioClient.badCertificateCallback = _badCertificateCallback;
-  ioClient.userAgent = 'Dart/${constants.buildInfo}';
+  ioClient.userAgent = 'Dart/$buildInfo';
 
   return _client = http.IOClient(ioClient);
 }

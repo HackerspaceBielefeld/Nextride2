@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
-import '../constants.dart' as constants;
-
 import 'package:weather/weather.dart';
 
 class WeatherProvider extends ChangeNotifier {
@@ -37,8 +35,11 @@ class WeatherProvider extends ChangeNotifier {
     '50n': MdiIcons.weatherFog,
   };
 
-  WeatherProvider() {
-    _wf = WeatherFactory(constants.openWeatherAPIKey, language: Language.GERMAN);
+  final String apiKey;
+  final String cityName;
+
+  WeatherProvider({required this.apiKey, required this.cityName}) {
+    _wf = WeatherFactory(apiKey, language: Language.GERMAN);
 
     _updateTimer = Timer.periodic(const Duration(hours: 1), (timer) {
       update();
@@ -79,11 +80,19 @@ class WeatherProvider extends ChangeNotifier {
   }
 
   Future<void> update() async {
+    // Ohne Key keine Anfrage, die waere sowieso mit 401 abgelehnt worden.
+    if (apiKey.isEmpty || cityName.isEmpty) {
+      error = 'Wetter nicht konfiguriert (OPENWEATHER_API_KEY, WEATHER_CITY)';
+      loading = false;
+      notifyListeners();
+      return;
+    }
+
     loading = true;
 
     // Bei einem Fehler bleibt der letzte Forecast stehen statt zu verschwinden.
     try {
-      forecast = await _wf.fiveDayForecastByCityName(constants.weatherCityName);
+      forecast = await _wf.fiveDayForecastByCityName(cityName);
       error = null;
     } on OpenWeatherAPIException catch (e) {
       // Die Exception liefert keinen Statuscode, nur den Antworttext.

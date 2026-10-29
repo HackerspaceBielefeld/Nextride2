@@ -4,13 +4,12 @@ import 'package:nextride2/providers/clock_provider.dart';
 import 'package:nextride2/providers/network_provider.dart';
 import 'package:nextride2/providers/rocket_launch_provider.dart';
 
-import '../constants.dart' as constants;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'config.dart';
 import 'providers/calendar_provider.dart';
 import 'providers/hassio_provider.dart';
 import 'providers/line_color_provider.dart';
@@ -22,55 +21,39 @@ import 'service/departure_source.dart';
 void main() {
   timeago.setLocaleMessages('de', timeago.DeMessages());
 
-  // Home-Assistant-Endpunkt, Token und Entity-Namen kommen aus der Umgebung,
-  // damit keine Zugangsdaten im Asset-Bundle landen. Abschliessende Slashes werden
-  // entfernt, weil die Pfade mit '/api/...' angehaengt werden.
-  final hassioBaseURI = _env('HASSIO_BASE_URI').replaceAll(RegExp(r'/+$'), '');
-  final hassioAuthToken = _env('HASSIO_TOKEN');
-  final hassioConfigured = hassioBaseURI.isNotEmpty && hassioAuthToken.isNotEmpty;
-  if (constants.withHassio && !hassioConfigured) {
+  // Konfiguration und Zugangsdaten kommen aus der Umgebung, damit nichts davon
+  // im Code oder im Asset-Bundle landet (siehe README.md).
+  final config = AppConfig.fromEnvironment(Platform.environment);
+  if (!config.hassioEnabled) {
     debugPrint('HASSIO_BASE_URI und/oder HASSIO_TOKEN nicht gesetzt - Home Assistant deaktiviert.');
+  }
+  if (config.departureStations.isEmpty) {
+    debugPrint('DEPARTURE_STATIONS nicht gesetzt - keine Abfahrten.');
   }
 
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(
         create: (context) => TimetableProvider(
-            source: DepartureSource.create(constants.departureSource, endpoint: _departureEndpoint()),
-            stations: _departureStations())),
+            source: DepartureSource.create(config.departureSource, endpoint: config.departureEndpoint),
+            stations: config.departureStations)),
     ChangeNotifierProvider(create: (context) => CalendarProvider()),
-    ChangeNotifierProvider(create: (context) => WeatherProvider()),
+    ChangeNotifierProvider(
+        create: (context) => WeatherProvider(apiKey: config.openWeatherApiKey, cityName: config.weatherCity)),
     ChangeNotifierProvider(create: (context) => ClockProvider()),
     ChangeNotifierProvider(create: (context) => NetworkProvider()),
-    ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
-    ChangeNotifierProvider(create: (context) => LineColorProvider(endpoint: constants.lineColorsEndpoint)),
+    ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: config.rocketLaunchEndpoint)),
+    ChangeNotifierProvider(create: (context) => LineColorProvider(endpoint: config.lineColorsEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
-            baseURI: hassioBaseURI,
-            authToken: hassioAuthToken,
-            timerName: _env('HASSIO_TIMER_ENTITY'),
-            textName: _env('HASSIO_TEXT_ENTITY'),
-            wcbusyName: _env('HASSIO_WCBUSY_ENTITY'),
-            leistungName: _env('HASSIO_LEISTUNG_ENTITY'),
-            enabled: constants.withHassio && hassioConfigured)),
+            baseURI: config.hassioBaseUri,
+            authToken: config.hassioToken,
+            timerName: config.hassioTimerEntity,
+            textName: config.hassioTextEntity,
+            wcbusyName: config.hassioWcBusyEntity,
+            leistungName: config.hassioLeistungEntity,
+            enabled: config.hassioEnabled)),
   ], child: const Nextride2App()));
 }
-
-String _env(String name) => (Platform.environment[name] ?? '').trim();
-
-String _departureEndpoint() {
-  switch (constants.departureSource) {
-    case DepartureSourceType.efa:
-      return constants.efaEndpoint;
-    case DepartureSourceType.vrr:
-      return constants.vrrEndpoint;
-    case DepartureSourceType.stadtbahnLive:
-      return constants.stadtbahnLiveEndpoint;
-  }
-}
-
-// EFA und stadtbahn.live nutzen beide DHIDs, der VRR eigene numerische IDs.
-Map<String, String> _departureStations() =>
-    constants.departureSource == DepartureSourceType.vrr ? constants.vrrStations : constants.requestStations;
 
 class Nextride2App extends StatefulWidget {
   const Nextride2App({super.key});
