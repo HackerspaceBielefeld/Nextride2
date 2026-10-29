@@ -37,6 +37,26 @@ Auf dem Pi gehoeren die Zeilen (ohne `export`) nach `/etc/nextride2.env`
 `withHassio = false` oder eine fehlende Variable schaltet die komplette
 Home-Assistant-Anbindung ab (kein UDP-Socket, keine Update-Timer).
 
+## Lokal debuggen (macOS)
+
+```bash
+flutter run -d macos
+```
+
+In VS Code gibt es dafuer die Launch-Konfiguration `nextride2 (macOS)`.
+Die `HASSIO_*`-Variablen werden aus der Umgebung des startenden Prozesses
+uebernommen. Lokale Zugangsdaten gehoeren in die (ignorierten) Dateien
+`.env.local` fuer das Terminal und `.vscode/settings.json` (`"dart.env"`)
+fuer VS Code:
+
+```bash
+set -a; . ./.env.local; set +a
+flutter run -d macos
+```
+Die App laeuft in der macOS-Sandbox; ausgehende Verbindungen und die
+UDP-Ports sind ueber `com.apple.security.network.client`/`.server` in
+`macos/Runner/*.entitlements` freigegeben.
+
 ## Build & Deploy
 
 ```bash

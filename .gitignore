@@ -5,9 +5,11 @@
 *.swp
 .DS_Store
 .atom/
+.build/
 .buildlog/
 .history
 .svn/
+.swiftpm/
 migrate_working_dir/
 
 # IntelliJ related
@@ -49,6 +51,9 @@ app.*.map.json
 /web/
 /ios/
 /windows/
-/macos/
 /test/
 /lib/constants.dart
+
+# Lokale Zugangsdaten zum Testen
+/.env.local
+/.vscode/settings.json
