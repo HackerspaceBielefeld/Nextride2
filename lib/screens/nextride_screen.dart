@@ -121,7 +121,10 @@ class SpaceGridCard extends StatelessWidget {
             ],
           ),
           Consumer<HassioProvider>(builder: (context, hp, child) {
-            if (hp.hassioText == null || hp.hassioText!.state == '' || hp.hassioText!.state == 'undefined') {
+            // 'unknown'/'unavailable' liefert HA, solange kein Text gesetzt bzw.
+            // die Entity nicht erreichbar ist - das soll nicht auf dem Display stehen.
+            const hidden = {'', 'undefined', 'unknown', 'unavailable'};
+            if (hp.hassioText == null || hidden.contains(hp.hassioText!.state.trim())) {
               return Container();
             }
 
@@ -270,8 +273,18 @@ class NextrideScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              'NxR 2',
+                            Text.rich(
+                              TextSpan(
+                                text: 'NxR 2',
+                                children: [
+                                  // Minor-Version, bewusst winzig auf der Grundlinie.
+                                  TextSpan(
+                                    text: '.1',
+                                    style: TextStyle(
+                                        fontSize: (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 32) * 0.3),
+                                  ),
+                                ],
+                              ),
                               style: Theme.of(context).textTheme.headlineLarge,
                             ),
                             Padding(
