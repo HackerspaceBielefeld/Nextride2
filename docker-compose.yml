@@ -1,0 +1,18 @@
+services:
+  nextride2:
+    build: .
+    image: nextride2:latest
+    restart: unless-stopped
+    env_file:
+      - path: /etc/nextride2.env   # HASSIO_*, siehe README.md
+        required: false
+    network_mode: host          # UDP listener + LAN access to Home Assistant
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+    group_add:
+      - "44"    # video
+      - "992"   # render
+      - "996"   # input
+    volumes:
+      - /run/udev:/run/udev:ro  # libinput device discovery
