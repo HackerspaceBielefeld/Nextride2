@@ -12,6 +12,8 @@ class WeatherProvider extends ChangeNotifier {
 
   late final WeatherFactory _wf;
   List<Weather> forecast = [];
+  // Hinweistext fuer die Anzeige, wenn das letzte Update fehlgeschlagen ist.
+  String? error;
   late final Timer _updateTimer;
 
   static const Map<String, IconData> weatherIcons = {
@@ -82,7 +84,15 @@ class WeatherProvider extends ChangeNotifier {
     // Bei einem Fehler bleibt der letzte Forecast stehen statt zu verschwinden.
     try {
       forecast = await _wf.fiveDayForecastByCityName(constants.weatherCityName);
+      error = null;
+    } on OpenWeatherAPIException catch (e) {
+      // Die Exception liefert keinen Statuscode, nur den Antworttext.
+      error = e.toString().contains('401')
+          ? 'Wetter kann nicht geladen werden: API-Key ungültig'
+          : 'Wetter kann nicht geladen werden';
+      debugPrint('Weather update failed: $e');
     } catch (e) {
+      error = 'Wetter kann nicht geladen werden';
       debugPrint('Weather update failed: $e');
     }
 

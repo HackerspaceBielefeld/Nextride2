@@ -13,6 +13,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'providers/calendar_provider.dart';
 import 'providers/hassio_provider.dart';
+import 'providers/line_color_provider.dart';
 import 'providers/timetable_provider.dart';
 import 'providers/weather_provider.dart';
 import 'screens/nextride_screen.dart';
@@ -37,6 +38,7 @@ void main() {
     ChangeNotifierProvider(create: (context) => ClockProvider()),
     ChangeNotifierProvider(create: (context) => NetworkProvider()),
     ChangeNotifierProvider(create: (context) => RocketLaunchProvider(endpoint: constants.rocketLaunchEndpoint)),
+    ChangeNotifierProvider(create: (context) => LineColorProvider(endpoint: constants.lineColorsEndpoint)),
     ChangeNotifierProvider(
         create: (context) => HassioProvider(
             baseURI: hassioBaseURI,
@@ -64,6 +66,7 @@ class _Nextride2AppState extends State<Nextride2App> {
     super.initState();
 
     Provider.of<TimetableProvider>(context, listen: false).fetch();
+    Provider.of<LineColorProvider>(context, listen: false).fetch();
     Provider.of<CalendarProvider>(context, listen: false).update();
     Provider.of<WeatherProvider>(context, listen: false).update();
 
@@ -84,7 +87,12 @@ class _Nextride2AppState extends State<Nextride2App> {
         fontSizeDelta = 1.2;
       }
 
-      final baseTextTheme = Theme.of(context).textTheme;
+      // Schriftgroessen (englishLike, 2021er Geometrie wie bisher) und Farben
+      // explizit zusammenfuehren: ThemeData.dark().textTheme hat keine fontSize,
+      // dann schlaegt die Assertion in TextStyle.apply zu.
+      final typography = Typography.material2021();
+      final baseTextTheme = typography.englishLike.merge(typography.black);
+      final darkTextTheme = typography.englishLike.merge(typography.white);
 
       return MaterialApp(
         title: 'Nextride 2',
@@ -99,9 +107,8 @@ class _Nextride2AppState extends State<Nextride2App> {
         ),
         darkTheme: ThemeData.dark().copyWith(
           primaryColor: Colors.red,
-          // Auf dem Text-Theme des Dark-Themes aufsetzen, sonst waeren die
-          // Textfarben die des hellen Fallback-Themes (unlesbar auf dunkel).
-          textTheme: ThemeData.dark().textTheme.apply(
+          // Helle Textfarben, sonst waeren sie unlesbar auf dunkel.
+          textTheme: darkTextTheme.apply(
                 fontSizeFactor: fontSizeFactor,
                 fontSizeDelta: fontSizeDelta,
               ),

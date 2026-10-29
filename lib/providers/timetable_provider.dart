@@ -6,6 +6,7 @@ import 'package:nextride2/service/api_client.dart';
 
 import '../constants.dart' as constants;
 import '../models/departue_data_store.dart';
+import '../models/departure_data.dart';
 
 class TimetableProvider extends ChangeNotifier {
   DepartureDataStore? timetable;
@@ -23,36 +24,21 @@ class TimetableProvider extends ChangeNotifier {
     });
   }
 
-  Map<String, dynamic> _requestBody(int id, String name) {
+  Map<String, String> _requestParameters(String stationId) {
     //TODO: Konfigurierbar machen
-
-    Map<String, dynamic> result = {};
-
-    var departure = {
-      'stationId': id,
-      'stationName': name,
-      'platformVisibility': 1,
-      'transport': '0,1,2,3,4,15,6',
-      'useAllLines': 1,
-      'linesFilter': null,
-      'optimizedForStation': 0,
-      'rowCount': 10,
-      'refreshInterval': 60,
-      'distance': 0,
-      'marquee': -1,
+    return {
+      'outputFormat': 'rapidJSON',
+      'language': 'de',
+      'type_dm': 'any',
+      'name_dm': stationId,
+      'mode': 'direct',
+      // Beide noetig, damit onwardLocations (fuer den Ziel-Kurznamen) kommen.
+      'depType': 'stopEvents',
+      'includeCompleteStopSeq': '1',
+      'useRealtime': '1',
+      'limit': '10',
+      'useAllStops': '1',
     };
-
-    const model = {'sortBy': 0};
-
-    departure.forEach((key, value) {
-      result['table[departure][$key]'] = value.toString();
-    });
-
-    model.forEach((key, value) {
-      result['table[$key]'] = value.toString();
-    });
-
-    return result;
   }
 
   void cleanup() {
@@ -66,17 +52,14 @@ class TimetableProvider extends ChangeNotifier {
 
     timetable!.cleanup();
 
-    // Bewusst immer benachrichtigen: die relativen Zeiten ("in 3 Minuten")
+    // Bewusst immer benachrichtigen: die relativen Zeiten ("in 3 min")
     // muessen auch ohne Datenaenderung regelmaessig neu gerendert werden.
     notifyListeners();
   }
 
   Future<void> fetch() async {
     try {
-      await Future.wait(List.generate(constants.requestStations.length, (index) {
-        return fetchStation(
-            constants.requestStations.keys.elementAt(index), constants.requestStations.values.elementAt(index));
-      }));
+      await Future.wait(constants.requestStations.keys.map(fetchStation));
     } catch (e) {
       // Timer-Callback: eine Exception waere hier unbehandelt. Vorhandene
       // Abfahrten bleiben stehen, beim naechsten Durchlauf wird neu versucht.
@@ -86,17 +69,19 @@ class TimetableProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchStation(int id, String name) async {
-    APIClientResponse response = await APIClient.post('backend/api/stations/table', _requestBody(id, name));
+  Future<void> fetchStation(String stationId) async {
+    APIClientResponse response = await APIClient.get('XML_DM_REQUEST', _requestParameters(stationId));
 
     final decoded = jsonDecode(response.item1.body);
-    final List<dynamic> departureData = (decoded['departureData'] as List<dynamic>?) ?? const [];
+    final List<dynamic> stopEvents = (decoded['stopEvents'] as List<dynamic>?) ?? const [];
 
-    if (timetable == null) {
-      timetable = DepartureDataStore.fromJson(departureData);
-    } else {
-      timetable!.addFromJson(departureData);
-    }
+    final List<DepartureData> departures = stopEvents
+        .whereType<Map<String, dynamic>>()
+        .map(DepartureData.tryFromEfa)
+        .whereType<DepartureData>()
+        .toList();
+
+    (timetable ??= DepartureDataStore()).replaceStation(stationId, departures);
   }
 
   @override

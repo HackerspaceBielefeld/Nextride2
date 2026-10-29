@@ -37,30 +37,20 @@ http.Client get httpex {
 }
 
 abstract class APIClient {
-  static String _url(String filename) {
-    final String base =
-        constants.endpoint.endsWith('/') ? constants.endpoint.substring(0, constants.endpoint.length - 1) : constants.endpoint;
-    return '$base/$filename';
+  static Uri _uri(String filename, Map<String, String>? queryParameters) {
+    final String base = constants.efaEndpoint.endsWith('/')
+        ? constants.efaEndpoint.substring(0, constants.efaEndpoint.length - 1)
+        : constants.efaEndpoint;
+    // queryParameters statt String-Verkettung: Haltestellen-IDs wie
+    // 'de:05711:5614' muessen korrekt kodiert werden.
+    return Uri.parse('$base/$filename').replace(queryParameters: queryParameters);
   }
 
-  static Future<APIClientResponse> get(String filename) async {
-    String strUri = _url(filename);
-    debugPrint('APIClient fetching $strUri');
+  static Future<APIClientResponse> get(String filename, [Map<String, String>? queryParameters]) async {
+    final Uri uri = _uri(filename, queryParameters);
+    debugPrint('APIClient fetching $uri');
 
-    final response = await httpex.get(Uri.parse(strUri));
-
-    if (response.statusCode == 200) {
-      return APIClientResponse(response, DateTime.now());
-    } else {
-      throw Exception('Failed to load $filename (${response.statusCode})');
-    }
-  }
-
-  static Future<APIClientResponse> post(String filename, Map<String, dynamic> data) async {
-    String strUri = _url(filename);
-    debugPrint('APIClient posting $strUri');
-
-    final response = await httpex.post(Uri.parse(strUri), body: data);
+    final response = await httpex.get(uri);
 
     if (response.statusCode == 200) {
       return APIClientResponse(response, DateTime.now());

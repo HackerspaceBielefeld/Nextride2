@@ -1,7 +1,7 @@
 # nextride2
 
 Abfahrtsmonitor / Info-Display (Flutter, laeuft per `flutter-pi` auf einem Raspberry Pi).
-Zeigt VRR-Abfahrten, Kalender, Wetter, Raketenstarts sowie Home-Assistant-Werte
+Zeigt Abfahrten (EFA von Westfalenfahrplan), Kalender, Wetter, Raketenstarts sowie Home-Assistant-Werte
 (Displaytext, Bestelltimer, WC-Status, Leistungsaufnahme).
 
 ## Setup
@@ -17,6 +17,19 @@ $EDITOR lib/constants.dart   # API-Keys, Haltestellen-IDs eintragen
 flutter pub get
 flutter analyze
 ```
+
+Abfahrten kommen aus dem EFA `XML_DM_REQUEST` von Westfalenfahrplan
+(`efaEndpoint`), die Haltestellen stehen in `requestStations`
+(EFA-ID, z.B. `de:05711:5614`). Linienfarben (Hintergrund und Text) werden
+beim Start von stadtbahn.live geladen (`lineColorsEndpoint`) und ueber die
+globale Linien-ID (`global_id` bzw. EFA `globalId`) zugeordnet; unbekannte
+Linien erscheinen navy mit weisser Schrift.
+
+**Umstieg von VRR:** Eine bestehende `lib/constants.dart` muss angepasst
+werden, sonst baut das Projekt nicht: `endpoint` wird zu `efaEndpoint`,
+`requestStations` ist jetzt `Map<String, String>`, `mobielLineColors`
+entfaellt und `lineColorsEndpoint` kommt hinzu (siehe
+`lib/constants.example.dart`).
 
 Home-Assistant-Endpunkt, Token und Entity-Namen werden zur Laufzeit aus der
 Umgebung gelesen:
@@ -36,6 +49,26 @@ Auf dem Pi gehoeren die Zeilen (ohne `export`) nach `/etc/nextride2.env`
 
 `withHassio = false` oder eine fehlende Variable schaltet die komplette
 Home-Assistant-Anbindung ab (kein UDP-Socket, keine Update-Timer).
+
+## Lokal debuggen (macOS)
+
+```bash
+flutter run -d macos
+```
+
+In VS Code gibt es dafuer die Launch-Konfiguration `nextride2 (macOS)`.
+Die `HASSIO_*`-Variablen werden aus der Umgebung des startenden Prozesses
+uebernommen. Lokale Zugangsdaten gehoeren in die (ignorierten) Dateien
+`.env.local` fuer das Terminal und `.vscode/settings.json` (`"dart.env"`)
+fuer VS Code:
+
+```bash
+set -a; . ./.env.local; set +a
+flutter run -d macos
+```
+Die App laeuft in der macOS-Sandbox; ausgehende Verbindungen und die
+UDP-Ports sind ueber `com.apple.security.network.client`/`.server` in
+`macos/Runner/*.entitlements` freigegeben.
 
 ## Build & Deploy
 
