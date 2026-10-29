@@ -6,58 +6,48 @@ Zeigt Abfahrten (EFA von Westfalenfahrplan), Kalender, Wetter, Raketenstarts sow
 
 ## Setup
 
-Die Konfiguration liegt in `lib/constants.dart` und ist bewusst nicht eingecheckt
-(siehe `.gitignore`). Ohne diese Datei laesst sich das Projekt nicht bauen:
-
 Voraussetzung ist ein Dart-SDK >= 3.5 (Flutter >= 3.24).
 
 ```bash
-cp lib/constants.example.dart lib/constants.dart
-$EDITOR lib/constants.dart   # API-Keys, Haltestellen-IDs eintragen
 flutter pub get
 flutter analyze
 ```
 
-Woher die Abfahrten kommen, legt `departureSource` in `lib/constants.dart` fest:
+## Konfiguration
 
-| Quelle | Haltestellen | Hinweis |
+Konfiguration und Zugangsdaten stehen nicht im Code, sondern werden zur
+Laufzeit aus Umgebungsvariablen gelesen (`lib/config.dart`). Vorlage mit allen
+Variablen: `nextride2.env.example`.
+
+| Variable | Bedeutung |
+|---|---|
+| `DEPARTURE_SOURCE` | `efa` (Standard), `vrr` oder `stadtbahnlive` |
+| `DEPARTURE_STATIONS` | Haltestellen `id=Name;id=Name`, ohne keine Abfahrten |
+| `OPENWEATHER_API_KEY`, `WEATHER_CITY` | Wetter, ohne Key nur ein Hinweis |
+| `HASSIO_BASE_URI`, `HASSIO_TOKEN` | Home Assistant, ohne ist die Anbindung aus (kein UDP-Socket, keine Timer) |
+| `HASSIO_TIMER_ENTITY`, `HASSIO_TEXT_ENTITY`, `HASSIO_WCBUSY_ENTITY`, `HASSIO_LEISTUNG_ENTITY` | Entities, leere werden uebersprungen |
+| `DEPARTURE_ENDPOINT`, `LINE_COLORS_ENDPOINT`, `ROCKET_LAUNCH_ENDPOINT` | optional, oeffentliche Standard-Endpunkte ueberschreiben |
+
+Auf dem Pi gehoert die Datei nach `/etc/nextride2.env` (`chmod 600`);
+`nextride2.service` und `nextride2.sh` laden sie.
+
+### Abfahrtsquellen
+
+| Quelle | Haltestellen-ID | Hinweis |
 |---|---|---|
-| `efa` (Standard) | `requestStations`, DHID (`de:05711:5614`) | EFA `XML_DM_REQUEST` von Westfalenfahrplan |
-| `vrr` | `vrrStations`, VRR-ID (`23005614`) | VRR-Haltestellenmonitor |
-| `stadtbahnLive` | `requestStations`, DHID | experimentell: Anzeigetafeln von stadtbahn.live, nur Haltestellen mit Tafel, Ziele fehlen oft |
+| `efa` (Standard) | DHID (`de:05711:5614`) | EFA `XML_DM_REQUEST` von Westfalenfahrplan |
+| `vrr` | VRR-ID (`23005614`) | VRR-Haltestellenmonitor |
+| `stadtbahnlive` | DHID | experimentell: Anzeigetafeln von stadtbahn.live, nur Haltestellen mit Tafel, Ziele fehlen oft |
 
 Weitere Quellen implementieren `DepartureSource` (`lib/service/departure_source.dart`).
 
 Linienfarben (Hintergrund und Text) werden beim Start von stadtbahn.live
-geladen (`lineColorsEndpoint`) und je nach Quelle ueber die globale Linien-ID
-(EFA), den EFA-Liniencode (VRR) oder die stadtbahn.live-Linie zugeordnet;
-unbekannte Linien erscheinen navy mit weisser Schrift.
+geladen und je nach Quelle ueber die globale Linien-ID (EFA), den
+EFA-Liniencode (VRR) oder die stadtbahn.live-Linie zugeordnet; unbekannte
+Linien erscheinen navy mit weisser Schrift.
 
-**Umstieg von VRR:** Eine bestehende `lib/constants.dart` muss angepasst
-werden, sonst baut das Projekt nicht: `endpoint` wird zu `efaEndpoint`,
-`requestStations` ist jetzt `Map<String, String>`, `mobielLineColors`
-entfaellt; neu sind `departureSource`, `vrrEndpoint`, `vrrStations`,
-`stadtbahnLiveEndpoint` und `lineColorsEndpoint` (siehe
-`lib/constants.example.dart`).
-
-Home-Assistant-Endpunkt, Token und Entity-Namen werden zur Laufzeit aus der
-Umgebung gelesen:
-
-```bash
-export HASSIO_BASE_URI=http://1.2.3.4:8123
-export HASSIO_TOKEN=xxxxxxxxxxxxxxxx
-export HASSIO_TIMER_ENTITY=timer.bestelltimer
-export HASSIO_TEXT_ENTITY=input_text.displaytext
-export HASSIO_WCBUSY_ENTITY=input_boolean.wc_busy
-export HASSIO_LEISTUNG_ENTITY=sensor.leistung_total
-```
-
-Nicht gesetzte Entities werden uebersprungen (keine Anfrage, keine Anzeige).
-Auf dem Pi gehoeren die Zeilen (ohne `export`) nach `/etc/nextride2.env`
-(`chmod 600`); `nextride2.service` und `nextride2.sh` laden die Datei.
-
-`withHassio = false` oder eine fehlende Variable schaltet die komplette
-Home-Assistant-Anbindung ab (kein UDP-Socket, keine Update-Timer).
+**Umstieg:** `lib/constants.dart` gibt es nicht mehr. Die Werte daraus gehoeren
+in `/etc/nextride2.env` (Haltestellen, Wetter-Key und -Stadt).
 
 ## Lokal debuggen (macOS)
 
@@ -66,15 +56,17 @@ flutter run -d macos
 ```
 
 In VS Code gibt es dafuer die Launch-Konfiguration `nextride2 (macOS)`.
-Die `HASSIO_*`-Variablen werden aus der Umgebung des startenden Prozesses
-uebernommen. Lokale Zugangsdaten gehoeren in die (ignorierten) Dateien
+Die Konfiguration wird aus der Umgebung des startenden Prozesses
+uebernommen. Lokal gehoert sie in die (ignorierten) Dateien
 `.env.local` fuer das Terminal und `.vscode/settings.json` (`"dart.env"`)
 fuer VS Code:
 
 ```bash
+cp nextride2.env.example .env.local   # einmalig, dann ausfuellen
 set -a; . ./.env.local; set +a
 flutter run -d macos
 ```
+
 Die App laeuft in der macOS-Sandbox; ausgehende Verbindungen und die
 UDP-Ports sind ueber `com.apple.security.network.client`/`.server` in
 `macos/Runner/*.entitlements` freigegeben.

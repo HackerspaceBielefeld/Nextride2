@@ -3,7 +3,7 @@ import 'departure_sources/efa_departure_source.dart';
 import 'departure_sources/stadtbahn_live_departure_source.dart';
 import 'departure_sources/vrr_departure_source.dart';
 
-/// Woher die Abfahrten kommen, Auswahl in `constants.dart`.
+/// Woher die Abfahrten kommen, Auswahl ueber DEPARTURE_SOURCE (siehe AppConfig).
 enum DepartureSourceType {
   /// EFA von Westfalenfahrplan (NWL), Haltestellen als DHID ('de:05711:5614').
   efa,

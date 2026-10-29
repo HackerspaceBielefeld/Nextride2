@@ -51,7 +51,6 @@ app.*.map.json
 /web/
 /ios/
 /windows/
-/lib/constants.dart
 
 # Lokale Zugangsdaten zum Testen
 /.env.local
